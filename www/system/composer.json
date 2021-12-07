@@ -1,0 +1,13 @@
+{
+    "autoload": {
+        "psr-0": {
+            "modules": "",
+			"core": "",
+			"expanding": "",
+			"vendor": ""
+        }
+    },
+    "require": {
+		"irazasyed/telegram-bot-sdk": "*"
+   }
+}
