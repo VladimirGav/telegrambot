@@ -1,0 +1,4 @@
+# phpstorm project files
+.idea
+www/uploads
+www/examples/bot_token.txt
