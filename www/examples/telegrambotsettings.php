@@ -1,5 +1,5 @@
 <?php
-/** Пример телеграм бота */
+/** Пример настройки связи с телеграм ботом */
 
 // Подключим автозагрузчик composer, defines
 use modules\telegram\services\sTelegram;

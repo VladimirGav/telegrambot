@@ -15,3 +15,10 @@
 ### Автоматическая публикация сообщений в телеграм канал
 1. Назначьте телеграм-бота администратором в чате/канале
 2. Укажите имя канала `@NameYouChannel` в файле [www/examples/telegramsendchat.php](www/examples/telegramsendchat.php) и выполните его.
+
+### Описание файлов
+1. `irazasyed/telegram-bot-sdk` - Используем Telegram Bot API - PHP SDK
+2. [www/system/modules/telegram/services/sTelegram.php](www/system/modules/telegram/services/sTelegram.php) - Промежуточный класс между примерами и Telegram Bot API
+3. [www/examples/telegrambotsettings.php](www/examples/telegrambotsettings.php) - Пример настройки связи между телеграм ботом и обработчиком на php
+4. [www/examples/telegrambotapi.php](www/examples/telegrambotapi.php) - Пример обработчика сообщений бота на php
+5. [www/examples/telegramsendchat.php](www/examples/telegramsendchat.php) - Пример отправки сообщений в канал/чат
