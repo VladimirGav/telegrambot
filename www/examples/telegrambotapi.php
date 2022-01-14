@@ -39,7 +39,7 @@ $messageTextLower = mb_strtolower($message_text);
 
 // Если первое сообщение
 if($messageTextLower=='/start'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет, я бот');
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'salom, men asadchik botman');
     exit;
 }
 
@@ -50,14 +50,14 @@ if($messageTextLower=='тест'){
 }
 
 // Если пользователь напишет привет
-if($messageTextLower=='привет'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет');
+if($messageTextLower=='assalomu alekum'){
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Assalomu Allekum Va Rahmatullohu Barakatuh');
     exit;
 }
 
 // пример ответа
-if($messageTextLower=='пример ответа'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ на сообщение', '', $message_id);
+if($messageTextLower=='Qalesz'){
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Alhamdulillah yaxshi😊', '', $message_id);
     exit;
 }
 
