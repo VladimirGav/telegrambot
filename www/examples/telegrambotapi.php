@@ -61,6 +61,22 @@ if($messageTextLower=='пример ответа'){
     exit;
 }
 
+if($messageTextLower=='chat_id'){
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'chat_id: '.$message_chat_id, '', $message_id);
+    exit;
+}
+
+// Пример отправки аудио файла
+if($messageTextLower=='мелодия'){
+    $InputFile = \Telegram\Bot\FileUpload\InputFile::create(__DIR__.'/audio.mp3');
+    $telegram = new \Telegram\Bot\Api($bot_token);
+    $response = $telegram->sendAudio([
+        'chat_id' => $message_chat_id,
+        'audio' => $InputFile,
+    ]);
+    exit;
+}
+
 // пример кнопки
 if($messageTextLower=='пример кнопки'){
     $inline_keyboard=[];
