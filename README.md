@@ -18,7 +18,7 @@
 2. Укажите имя канала `@NameYouChannel` в файле [www/examples/telegramsendchat.php](www/examples/telegramsendchat.php) и выполните его.
 
 ### Описание файлов
-1. [backend/core/installCopmposer.php](backend/core/installCopmposer.php) - Класс для установки composer
+1. [backend/core/installComposer.php](backend/core/installComposer.php) - Класс для установки composer
 2. [backend/composer/composer.json](backend/composer/composer.json) - Файл настроек для composer
 3. [backend/modules/telegram/services/sTelegram.php](backend/modules/telegram/services/sTelegram.php) - Промежуточный класс между примерами и Telegram Bot API
 4. [www/examples/telegrambotsettings.php](www/examples/telegrambotsettings.php) - Пример настройки связи между телеграм ботом и обработчиком на php
