@@ -1,20 +1,28 @@
 <?php
+/**
+ * VladimirGav
+ * GitHub Website: https://vladimirgav.github.io/
+ * GitHub: https://github.com/VladimirGav
+ * Copyright (c)
+ */
+
+// Устанавливаем и подключаем Composer
+require_once __DIR__.'/../../backend/defines.php';
+
 /** Пример обработки сообщений телеграм бота */
 
-// Подключим автозагрузчик composer, defines
 use modules\telegram\services\sTelegram;
-use Telegram\Bot\Api;
-
-require_once __DIR__ .'/../system/defines.php';
-require_once __DIR__ .'/../system/vendor/autoload.php';
 
 // Получим токен бота из файла
-$bot_token = file_get_contents(__DIR__.'/bot_token.txt');
+if(!file_exists(_FILE_bot_token_)){
+    exit(_FILE_bot_token_.' is empty');
+}
+$bot_token = file_get_contents(_FILE_bot_token_);
 
 
 // Подключаемся к апи
-$telegram = new Api($bot_token);
-$dataMessage = $telegram->getWebhookUpdates();
+$telegram = new \Telegram\Bot\Api($bot_token);
+$dataMessage = $telegram->getWebhookUpdate();
 
 if(empty($dataMessage['message']['message_id'])){
     echo json_encode(['error'=> 1, 'data' => 'message_id empty']);
@@ -85,6 +93,43 @@ if($messageTextLower=='пример кнопки'){
     $reply_markup = json_encode($keyboard);
     sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Сообщение с кнопкой', $reply_markup);
     exit;
+}
+
+// Пример chatGPT
+$pos2 = stripos($message_text, '/ai');
+if ($pos2 !== false) {
+    $message_text = trim($message_text);
+    $message_text = str_replace('/ai', '', $message_text);
+    $message_text = str_replace('  ', ' ', $message_text);
+    $message_text  = mb_strtolower($message_text);
+    if(empty($message_text)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /ai Ты можешь отвечать на вопросы?');
+        exit;
+    }
+
+    // Получим токен бота из файла
+    if(!file_exists(_FILE_api_gpt_)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'api_gpt is empty');
+        exit;
+    }
+    $api_gpt = file_get_contents(_FILE_api_gpt_);
+
+    $client = \OpenAI::client($api_gpt);
+    $result = $client->completions()->create([
+        'model' => 'text-davinci-003',
+        'prompt' => $message_text,
+        'temperature' => 0,
+        'max_tokens' => 500,
+        'top_p' => 1,
+        'frequency_penalty' => 0,
+        'presence_penalty' => 0,
+        //'stop' => "\n",
+    ]);
+
+    if(!empty($result['choices'][0]['text'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $result['choices'][0]['text'], '', $message_id);
+        exit;
+    }
 }
 
 // Если не предусмотрен ответ

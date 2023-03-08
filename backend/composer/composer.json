@@ -1,0 +1,14 @@
+{
+  "config": {
+    "platform-check": false
+  },
+    "autoload": {
+        "psr-4": {
+			"modules\\": "../modules/"
+        }
+    },
+    "require": {
+      "irazasyed/telegram-bot-sdk": "*",
+      "openai-php/client": "*"
+  }
+}

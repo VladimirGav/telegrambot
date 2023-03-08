@@ -1,0 +1,5 @@
+vendor
+composer.lock
+composer.phar
+composer_install_temp.sh
+composerLog

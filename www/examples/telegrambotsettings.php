@@ -1,11 +1,17 @@
 <?php
+/**
+ * VladimirGav
+ * GitHub Website: https://vladimirgav.github.io/
+ * GitHub: https://github.com/VladimirGav
+ * Copyright (c)
+ */
+
+// Устанавливаем и подключаем Composer
+require_once __DIR__.'/../../backend/defines.php';
+
 /** Пример настройки связи с телеграм ботом */
 
-// Подключим автозагрузчик composer, defines
 use modules\telegram\services\sTelegram;
-
-require_once __DIR__ .'/../system/defines.php';
-require_once __DIR__ .'/../system/vendor/autoload.php';
 
 ?>
 <p><b>Создание токена/бота</b></p>
@@ -16,6 +22,7 @@ require_once __DIR__ .'/../system/vendor/autoload.php';
     "Любое название" - Имя бота<br>
     "NameYoubot" - Логин бота, должен заканчиваться на bot<br>
     Если все в порядке приходит токен бота примерно такой "7345887:AAElClcpnLz8fGX2vEEaa"<br>
+
 </p>
 <form method="post">
     <p>Введите токен</p>
@@ -24,7 +31,10 @@ require_once __DIR__ .'/../system/vendor/autoload.php';
     <p>Введите url api бота</p>
     <input name="website_url" type="text" value="<?= _HOME_URL_ ?>/examples/telegrambotapi.php">
 
-    <button type="submit">Задать url для бота</button>
+    <p>Введите <a target="_blank" href="https://platform.openai.com/account/api-keys">api ChatGPT</a> (по желанию, будет работать команда: /ai ваш вопрос к ChatGPT)</p>
+    <input name="api_gpt" type="text" value="">
+
+    <button type="submit">Сохранить и задать url для бота</button>
 </form>
 
 
@@ -48,11 +58,14 @@ if(!empty($dataPost['bot_token']) && !empty($dataPost['website_url'])){
 
     // Сохраним токен в файл
     $text = $dataPost['bot_token'];
-    $fp = fopen(__DIR__."/bot_token.txt", "w");
-    fwrite($fp, $text);
-    fclose($fp);
+    file_put_contents(_FILE_bot_token_, $text);
 
 
+}
+
+if(!empty($dataPost['api_gpt'])){
+    $text = $dataPost['api_gpt'];
+    file_put_contents(_FILE_api_gpt_, $text);
 }
 
 

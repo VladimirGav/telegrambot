@@ -1,15 +1,23 @@
 <?php
+/**
+ * VladimirGav
+ * GitHub Website: https://vladimirgav.github.io/
+ * GitHub: https://github.com/VladimirGav
+ * Copyright (c)
+ */
+
+// Устанавливаем и подключаем Composer
+require_once __DIR__.'/../../backend/defines.php';
+
 /** Пример автоматической отправки сообщений в телеграм канал */
 
-// Подключим автозагрузчик composer, defines
 use modules\telegram\services\sTelegram;
-use Telegram\Bot\Api;
-
-require_once __DIR__ .'/../system/defines.php';
-require_once __DIR__ .'/../system/vendor/autoload.php';
 
 // Получим токен бота из файла
-$bot_token = file_get_contents(__DIR__.'/bot_token.txt');
+if(!file_exists(_FILE_bot_token_)){
+    exit(_FILE_bot_token_.' is empty');
+}
+$bot_token = file_get_contents(_FILE_bot_token_);
 
 
 // Отправка в чат или канал
