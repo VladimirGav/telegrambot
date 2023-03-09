@@ -15,7 +15,7 @@ use modules\telegram\services\sTelegram;
 
 ?>
 <p><b>Создание токена/бота</b></p>
-<p>Заходим в Telegram и добавляем @BotFather</p>
+<p>Заходим в Telegram и добавляем <a target="_blank" href="https://t.me/BotFather">@BotFather</a></p>
 <p>Пишем ему:<br>
     "/start" - Старт<br>
     "/newbot" - Новый бот<br>
