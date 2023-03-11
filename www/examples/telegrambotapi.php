@@ -115,19 +115,16 @@ if ($pos2 !== false) {
     $api_gpt = file_get_contents(_FILE_api_gpt_);
 
     $client = \OpenAI::client($api_gpt);
-    $result = $client->completions()->create([
-        'model' => 'text-davinci-003',
-        'prompt' => $message_text,
-        'temperature' => 0,
-        'max_tokens' => 500,
-        'top_p' => 1,
-        'frequency_penalty' => 0,
-        'presence_penalty' => 0,
-        //'stop' => "\n",
+    $response = $client->chat()->create([
+        'model' => 'gpt-3.5-turbo',
+        'messages' => [
+            ['role' => 'user', 'content' => $message_text],
+        ],
     ]);
+    $response->toArray();
 
-    if(!empty($result['choices'][0]['text'])){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $result['choices'][0]['text'], '', $message_id);
+    if(!empty($response['choices'][0]['message']['content'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $response['choices'][0]['message']['content'], '', $message_id);
         exit;
     }
 }
