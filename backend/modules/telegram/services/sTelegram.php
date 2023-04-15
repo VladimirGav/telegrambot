@@ -139,7 +139,7 @@ class sTelegram
         $messageId = $response->getMessageId();
     }
 
-    public function sendPhoto($bot_token, $chat_id, $file, $caption='')
+    public function sendPhoto($bot_token, $chat_id, $file, $caption='', $reply_to_message_id='')
     {
         if(!file_exists($file)){
             return ['error' => 1, 'data' => 'File not found'];
@@ -150,7 +150,8 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['photo']=$InputFile;
-        $dataMessage['caption']=$caption;
+        if(!empty($caption)){ $dataMessage['caption']=$caption; }
+        if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
         $getMessageId=0;
         $error=0;
@@ -166,7 +167,7 @@ class sTelegram
         return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendAudio($bot_token, $chat_id, $file, $caption='')
+    public function sendAudio($bot_token, $chat_id, $file, $caption='', $reply_to_message_id='')
     {
         if(!file_exists($file)){
             return ['error' => 1, 'data' => 'File not found'];
@@ -177,7 +178,8 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['audio']=$InputFile;
-        $dataMessage['caption']=$caption;
+        if(!empty($caption)){ $dataMessage['caption']=$caption; }
+        if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
         $getMessageId=0;
         $error=0;
@@ -193,7 +195,7 @@ class sTelegram
         return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendDocument($bot_token, $chat_id, $file, $caption='')
+    public function sendDocument($bot_token, $chat_id, $file, $caption='', $reply_to_message_id='')
     {
         if(!file_exists($file)){
             return ['error' => 1, 'data' => 'File not found'];
@@ -204,7 +206,8 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['document']=$InputFile;
-        $dataMessage['caption']=$caption;
+        if(!empty($caption)){ $dataMessage['caption']=$caption; }
+        if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
         $getMessageId=0;
         $error=0;
@@ -220,7 +223,7 @@ class sTelegram
         return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendVideo($bot_token, $chat_id, $file, $caption='')
+    public function sendVideo($bot_token, $chat_id, $file, $caption='', $reply_to_message_id='')
     {
         if(!file_exists($file)){
             return ['error' => 1, 'data' => 'File not found'];
@@ -231,7 +234,8 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['video']=$InputFile;
-        $dataMessage['caption']=$caption;
+        if(!empty($caption)){ $dataMessage['caption']=$caption; }
+        if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
         $getMessageId=0;
         $error=0;
@@ -247,7 +251,7 @@ class sTelegram
         return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendVoice($bot_token, $chat_id, $file)
+    public function sendVoice($bot_token, $chat_id, $file, $caption='', $reply_to_message_id='')
     {
         if(!file_exists($file)){
             return ['error' => 1, 'data' => 'File not found'];
@@ -258,6 +262,8 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['voice']=$InputFile;
+        if(!empty($caption)){ $dataMessage['caption']=$caption; }
+        if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
         $getMessageId=0;
         $error=0;
@@ -273,7 +279,7 @@ class sTelegram
         return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendSticker($bot_token, $chat_id, $file)
+    public function sendSticker($bot_token, $chat_id, $file, $reply_to_message_id='')
     {
         if(!file_exists($file)){
             return ['error' => 1, 'data' => 'File not found'];
@@ -284,6 +290,7 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['sticker']=$InputFile;
+        if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
         $getMessageId=0;
         $error=0;

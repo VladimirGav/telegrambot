@@ -76,7 +76,7 @@ if($messageTextLower=='chat_id'){
 
 // Пример отправки аудио файла
 if($messageTextLower=='мелодия'){
-    sTelegram::instance()->sendAudio($bot_token, $message_chat_id, __DIR__.'/audio.mp3');
+    sTelegram::instance()->sendAudio($bot_token, $message_chat_id, __DIR__.'/audio.mp3', '', $message_id);
     exit;
 }
 
@@ -179,7 +179,7 @@ if ($pos2 !== false) {
         $fileName = $dir.'/'.time().'.png';
         file_put_contents($fileName, file_get_contents($response['data'][0]['url']));
 
-        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName);
+        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $message_text, $message_id);
         exit;
     }
 
