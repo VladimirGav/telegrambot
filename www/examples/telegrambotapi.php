@@ -76,12 +76,7 @@ if($messageTextLower=='chat_id'){
 
 // Пример отправки аудио файла
 if($messageTextLower=='мелодия'){
-    $InputFile = \Telegram\Bot\FileUpload\InputFile::create(__DIR__.'/audio.mp3');
-    $telegram = new \Telegram\Bot\Api($bot_token);
-    $response = $telegram->sendAudio([
-        'chat_id' => $message_chat_id,
-        'audio' => $InputFile,
-    ]);
+    sTelegram::instance()->sendAudio($bot_token, $message_chat_id, __DIR__.'/audio.mp3');
     exit;
 }
 
@@ -98,10 +93,13 @@ if($messageTextLower=='пример кнопки'){
 // Пример chatGPT
 $pos2 = stripos($message_text, '/ai');
 if ($pos2 !== false) {
+    // Удаляем все лишнее
     $message_text = trim($message_text);
     $message_text = str_replace('/ai', '', $message_text);
     $message_text = str_replace('  ', ' ', $message_text);
     $message_text  = mb_strtolower($message_text);
+
+    // Если пустой, отправляем пример
     if(empty($message_text)){
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /ai Ты можешь отвечать на вопросы?');
         exit;
@@ -127,6 +125,64 @@ if ($pos2 !== false) {
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $response['choices'][0]['message']['content'], '', $message_id);
         exit;
     }
+}
+
+// АИ Рисуем картинку по запросу
+$pos2 = stripos($message_text, '/img');
+if ($pos2 !== false) {
+    $dir = __DIR__.'/uploads/images';
+    if(!file_exists($dir)){
+        if (!mkdir($dir, 0777, true)) {
+            die('Не удалось создать директории...');
+        }
+    }
+
+    // Удаляем все лишнее
+    $message_text = trim($message_text);
+    $message_text = str_replace('/img', '', $message_text);
+    $message_text = str_replace('  ', ' ', $message_text);
+    $message_text  = mb_strtolower($message_text);
+
+    // Если пустой, отправляем пример
+    if(empty($message_text)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /img Рыжая лиса в лесу');
+        exit;
+    }
+
+    // Получим токен бота из файла
+    if(!file_exists(_FILE_api_gpt_)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'api_gpt is empty');
+        exit;
+    }
+    $api_gpt = file_get_contents(_FILE_api_gpt_);
+
+    $client = \OpenAI::client($api_gpt);
+    $response = $client->images()->create([
+        'prompt' => $message_text,
+        'n' => 1,
+        'size' => '256x256',
+        'response_format' => 'url',
+    ]);
+
+    $response->created; // 1589478378
+
+    foreach ($response->data as $data) {
+        $data->url; // 'https://oaidalleapiprodscus.blob.core.windows.net/private/...'
+        $data->b64_json; // null
+    }
+
+    $response->toArray(); // ['created' => 1589478378, data => ['url' => 'https://oaidalleapiprodscus...', ...]]
+
+    $fileName='';
+    if(!empty($response['data'][0]['url'])){
+        // save img
+        $fileName = $dir.'/'.time().'.png';
+        file_put_contents($fileName, file_get_contents($response['data'][0]['url']));
+
+        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName);
+        exit;
+    }
+
 }
 
 // Если не предусмотрен ответ

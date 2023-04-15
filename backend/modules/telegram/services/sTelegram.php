@@ -139,72 +139,164 @@ class sTelegram
         $messageId = $response->getMessageId();
     }
 
-    public function sendPhoto($bot_token)
+    public function sendPhoto($bot_token, $chat_id, $file, $caption='')
     {
+        if(!file_exists($file)){
+            return ['error' => 1, 'data' => 'File not found'];
+        }
+        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($file);
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->sendPhoto([
-            'chat_id' => 'CHAT_ID',
-            'photo' => 'path/to/photo.jpg',
-            'caption' => 'Some caption'
-        ]);
 
-        $messageId = $response->getMessageId();
+        $dataMessage=[];
+        $dataMessage['chat_id']=$chat_id;
+        $dataMessage['photo']=$InputFile;
+        $dataMessage['caption']=$caption;
+
+        $getMessageId=0;
+        $error=0;
+        try {
+            $sendMessageData = $telegram->sendPhoto($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Успешно';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendAudio($bot_token)
+    public function sendAudio($bot_token, $chat_id, $file, $caption='')
     {
+        if(!file_exists($file)){
+            return ['error' => 1, 'data' => 'File not found'];
+        }
+        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($file);
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->sendAudio([
-            'chat_id' => 'CHAT_ID',
-            'audio' => 'path/to/audio.mp3',
-        ]);
 
-        $messageId = $response->getMessageId();
+        $dataMessage=[];
+        $dataMessage['chat_id']=$chat_id;
+        $dataMessage['audio']=$InputFile;
+        $dataMessage['caption']=$caption;
+
+        $getMessageId=0;
+        $error=0;
+        try {
+            $sendMessageData = $telegram->sendAudio($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Успешно';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendDocument($bot_token)
+    public function sendDocument($bot_token, $chat_id, $file, $caption='')
     {
+        if(!file_exists($file)){
+            return ['error' => 1, 'data' => 'File not found'];
+        }
+        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($file);
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->sendDocument([
-            'chat_id' => 'CHAT_ID',
-            'document' => 'path/to/document.pdf',
-            'caption' => 'This is a document',
-        ]);
 
-        $messageId = $response->getMessageId();
+        $dataMessage=[];
+        $dataMessage['chat_id']=$chat_id;
+        $dataMessage['document']=$InputFile;
+        $dataMessage['caption']=$caption;
+
+        $getMessageId=0;
+        $error=0;
+        try {
+            $sendMessageData = $telegram->sendDocument($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Успешно';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendSticker($bot_token)
+    public function sendVideo($bot_token, $chat_id, $file, $caption='')
     {
+        if(!file_exists($file)){
+            return ['error' => 1, 'data' => 'File not found'];
+        }
+        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($file);
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->sendSticker([
-            'chat_id' => 'CHAT_ID',
-            'sticker' => 'path/to/sticker.webp',
-        ]);
 
-        $messageId = $response->getMessageId();
+        $dataMessage=[];
+        $dataMessage['chat_id']=$chat_id;
+        $dataMessage['video']=$InputFile;
+        $dataMessage['caption']=$caption;
+
+        $getMessageId=0;
+        $error=0;
+        try {
+            $sendMessageData = $telegram->sendVideo($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Успешно';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendVideo($bot_token, $message_chat_id, $videoPath)
+    public function sendVoice($bot_token, $chat_id, $file)
     {
-        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($videoPath);
+        if(!file_exists($file)){
+            return ['error' => 1, 'data' => 'File not found'];
+        }
+        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($file);
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->sendVideo([
-            'chat_id' => $message_chat_id,
-            'video' => $InputFile,
-        ]);
-        $messageId = $response->getMessageId();
+
+        $dataMessage=[];
+        $dataMessage['chat_id']=$chat_id;
+        $dataMessage['voice']=$InputFile;
+
+        $getMessageId=0;
+        $error=0;
+        try {
+            $sendMessageData = $telegram->sendVoice($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Успешно';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
-    public function sendVoice($bot_token)
+    public function sendSticker($bot_token, $chat_id, $file)
     {
+        if(!file_exists($file)){
+            return ['error' => 1, 'data' => 'File not found'];
+        }
+        $InputFile = \Telegram\Bot\FileUpload\InputFile::create($file);
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->sendVoice([
-            'chat_id' => 'CHAT_ID',
-            'voice' => 'path/to/voice.ogg',
-        ]);
 
-        $messageId = $response->getMessageId();
+        $dataMessage=[];
+        $dataMessage['chat_id']=$chat_id;
+        $dataMessage['sticker']=$InputFile;
+
+        $getMessageId=0;
+        $error=0;
+        try {
+            $sendMessageData = $telegram->sendSticker($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Успешно';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
     public function sendLocation($bot_token)
