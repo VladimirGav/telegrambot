@@ -112,6 +112,23 @@ if ($pos2 !== false) {
     }
     $api_gpt = file_get_contents(_FILE_api_gpt_);
 
+    // TODO GPT-4 API waitlist https://openai.com/waitlist/gpt-4-api , SOON
+    /*$stream = $client->chat()->createStreamed([
+        'model' => 'gpt-4',
+        'messages' => [
+            ['role' => 'user', 'content' => $message_text],
+        ],
+    ]);
+
+    $rowsArr=[];
+    foreach($stream as $response){
+        $rowsArr = $response->choices[0]->toArray();
+    }
+    echo '<pre>';
+    print_r($rowsArr);
+    echo '</pre>';*/
+
+    // gpt-3.5-turbo
     $client = \OpenAI::client($api_gpt);
     $response = $client->chat()->create([
         'model' => 'gpt-3.5-turbo',

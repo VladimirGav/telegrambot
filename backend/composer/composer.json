@@ -1,6 +1,9 @@
 {
   "config": {
-    "platform-check": false
+    "platform-check": false,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   },
     "autoload": {
         "psr-4": {
