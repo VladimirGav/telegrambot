@@ -101,6 +101,12 @@ class sTelegram
         return $contents;
     }
 
+    public function getWebhookUpdate($bot_token){
+        $telegram = new \Telegram\Bot\Api($bot_token);
+        $dataMessage = $telegram->getWebhookUpdate();
+        return $dataMessage;
+    }
+
     /**
      * Use this method to remove a previously set outgoing webhook.
      * @param $bot_token
@@ -108,11 +114,89 @@ class sTelegram
      * @throws \Telegram\Bot\Exceptions\TelegramSDKException
      */
     public function removeWebhook($bot_token){
+        //exit;
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->removeWebhook();
-        return $response;
+        try {
+            $response = $telegram->removeWebhook();
+        } catch (\Exception $e) {
+            return ['error'=>1, 'data' => 'Telegram Bot API Token error'];
+        }
+        return ['error'=>0, 'data' => $response];
     }
 
+
+    /**
+     * Получаем последнее сообщение избегая повторов
+     * @param $bot_token
+     * @return array|\Telegram\Bot\Objects\Update
+     */
+    public function getWebhookLastMessage($bot_token){
+        $LatestMessage=[];
+        $lastUpdateId = $this->getLastUpdateId($bot_token);
+        $dataMessage = $this->getWebhookUpdate($bot_token);
+
+        if(!empty($dataMessage['update_id']) && $dataMessage['update_id'] != $lastUpdateId){
+            $this->saveLastUpdateId($bot_token, $dataMessage['update_id']);
+            $LatestMessage = $dataMessage;
+        }
+        return $LatestMessage;
+    }
+
+    /**
+     * Получаем последнее сообщение избегая повторов
+     * @param $bot_token
+     * @return array|mixed
+     * @throws \Telegram\Bot\Exceptions\TelegramSDKException
+     */
+    public function getUpdatesLastMessage($bot_token){
+        $LatestMessage=[];
+        $params=[];
+
+        $lastUpdateId = $this->getLastUpdateId($bot_token);
+        $params['offset']=$lastUpdateId;
+        $telegram = new \Telegram\Bot\Api($bot_token);
+        try {
+            $UpdatesData = $telegram->getUpdates($params);
+        } catch (Exception $e) {
+            return ['error'=>1, 'data' => 'Telegram Bot API Token error'];
+        }
+        $UpdatesDataArr = [];
+        if(!empty($UpdatesData) && is_array($UpdatesData)){
+            foreach ($UpdatesData as $UpdateData){
+                $UpdatesDataArr[]=$UpdateData->toArray();
+            }
+        }
+
+        $nextid=($lastUpdateId>0)?1:0;
+        if(!empty($UpdatesDataArr[$nextid]['update_id'])){
+            $this->saveLastUpdateId($bot_token, $UpdatesDataArr[$nextid]['update_id']);
+            $LatestMessage = $UpdatesDataArr[$nextid];
+        }
+        return $LatestMessage;
+    }
+
+    public function getLastUpdateId($bot_token){
+        $FileLastUpdateId = $this->getFileLastUpdateId($bot_token);
+        $lastUpdateId = 0;
+        if(file_exists($FileLastUpdateId)){
+            $lastUpdateId = file_get_contents($FileLastUpdateId);
+        }
+        return $lastUpdateId;
+    }
+
+    public function saveLastUpdateId($bot_token, $lastUpdateId){
+        $FileLastUpdateId = $this->getFileLastUpdateId($bot_token);
+        $dirFile = dirname($FileLastUpdateId);
+
+        if (!is_dir($dirFile)) { if (!@mkdir($dirFile, 0755, true)) { return false; } }
+        file_put_contents($FileLastUpdateId, $lastUpdateId);
+        return true;
+    }
+
+    public function getFileLastUpdateId($bot_token){
+        $botName = substr($bot_token,-6);
+        return __DIR__.'/telegram-ids/last-id-'.$botName.'.txt';
+    }
 
     /**
      * A simple method for testing your bot's auth token.

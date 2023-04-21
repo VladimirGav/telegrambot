@@ -1,6 +1,6 @@
-# phpstorm project files
 .idea
 www/uploads
-www/examples/bot_token.txt
 www/examples/uploads
 www/examples/telegramsendtest.php
+forwindows
+forwindows/php

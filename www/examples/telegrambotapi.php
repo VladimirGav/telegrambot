@@ -17,15 +17,22 @@ use modules\telegram\services\sTelegram;
 if(!file_exists(_FILE_bot_token_)){
     exit(_FILE_bot_token_.' is empty');
 }
-$bot_token = file_get_contents(_FILE_bot_token_);
-
+$bot_token = trim(file_get_contents(_FILE_bot_token_));
 
 // Подключаемся к апи
 $telegram = new \Telegram\Bot\Api($bot_token);
-$dataMessage = $telegram->getWebhookUpdate();
+
+// Если запускаем через консоль, а не используем Telegram Webhook
+if(!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1]=='console'){
+    $removeWebhook = sTelegram::instance()->removeWebhook($bot_token); // Удаляем привязку к Telegram Webhook
+    if(!empty($removeWebhook['error'])){ exit(json_encode($removeWebhook)); }
+    $dataMessage = sTelegram::instance()->getUpdatesLastMessage($bot_token);
+} else {
+    $dataMessage = sTelegram::instance()->getWebhookLastMessage($bot_token);
+}
 
 if(empty($dataMessage['message']['message_id'])){
-    echo json_encode(['error'=> 1, 'data' => 'message_id empty']);
+    //echo json_encode(['error'=> 1, 'data' => 'message_id empty']);
     exit;
 }
 if(empty($dataMessage['message']['chat']['id'])){
@@ -45,21 +52,25 @@ $message_text = $dataMessage['message']['text']; // Текст сообщени�
 // К нижнему регистру
 $messageTextLower = mb_strtolower($message_text);
 
+// Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower);
+$messageTextLower = preg_replace('/(.*)(\/img@[^ ]*)(.*)/', '/img $1$3', $messageTextLower);
+
 // Если первое сообщение
 if($messageTextLower=='/start'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет, я бот');
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет, я бот', '', $message_id);
     exit;
 }
 
 // Если пользователь напишет Тест, то выведем ответ
 if($messageTextLower=='тест'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ от бота на сообщение тест. <b>Вы можете предусмотреть свои ответы на любые сообщения в формате HTML.</b>');
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ от бота на сообщение тест. <b>Вы можете предусмотреть свои ответы на любые сообщения в формате HTML.</b>', '', $message_id);
     exit;
 }
 
 // Если пользователь напишет привет
 if($messageTextLower=='привет'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет');
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет', '', $message_id);
     exit;
 }
 
@@ -101,45 +112,29 @@ if ($pos2 !== false) {
 
     // Если пустой, отправляем пример
     if(empty($message_text)){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /ai Ты можешь отвечать на вопросы?');
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /ai Ты можешь отвечать на вопросы?', '', $message_id);
         exit;
     }
 
     // Получим токен бота из файла
     if(!file_exists(_FILE_api_gpt_)){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'api_gpt is empty');
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'OpenAI API KEY is empty', '', $message_id);
         exit;
     }
-    $api_gpt = file_get_contents(_FILE_api_gpt_);
-
-    // TODO GPT-4 API waitlist https://openai.com/waitlist/gpt-4-api , SOON
-    /*$stream = $client->chat()->createStreamed([
-        'model' => 'gpt-4',
-        'messages' => [
-            ['role' => 'user', 'content' => $message_text],
-        ],
-    ]);
-
-    $rowsArr=[];
-    foreach($stream as $response){
-        $rowsArr = $response->choices[0]->toArray();
+    $api_gpt = trim(file_get_contents(_FILE_api_gpt_));
+    if(empty($api_gpt)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'OpenAI API KEY is empty', '', $message_id);
+        exit;
     }
-    echo '<pre>';
-    print_r($rowsArr);
-    echo '</pre>';*/
 
     // gpt-3.5-turbo
-    $client = \OpenAI::client($api_gpt);
-    $response = $client->chat()->create([
-        'model' => 'gpt-3.5-turbo',
-        'messages' => [
-            ['role' => 'user', 'content' => $message_text],
-        ],
-    ]);
-    $response->toArray();
+    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, 'Перечисли все океаны');
+    if(!empty($ChatGPTAnswerData['error'])){
+        exit(json_encode($ChatGPTAnswerData));
+    }
 
-    if(!empty($response['choices'][0]['message']['content'])){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $response['choices'][0]['message']['content'], '', $message_id);
+    if(!empty($ChatGPTAnswerData['answer'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ChatGPTAnswerData['answer'], '', $message_id);
         exit;
     }
 }
@@ -162,39 +157,31 @@ if ($pos2 !== false) {
 
     // Если пустой, отправляем пример
     if(empty($message_text)){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /img Рыжая лиса в лесу');
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /img Рыжая лиса в лесу', '', $message_id);
         exit;
     }
 
     // Получим токен бота из файла
     if(!file_exists(_FILE_api_gpt_)){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'api_gpt is empty');
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'OpenAI API KEY is empty', '', $message_id);
         exit;
     }
-    $api_gpt = file_get_contents(_FILE_api_gpt_);
-
-    $client = \OpenAI::client($api_gpt);
-    $response = $client->images()->create([
-        'prompt' => $message_text,
-        'n' => 1,
-        'size' => '256x256',
-        'response_format' => 'url',
-    ]);
-
-    $response->created; // 1589478378
-
-    foreach ($response->data as $data) {
-        $data->url; // 'https://oaidalleapiprodscus.blob.core.windows.net/private/...'
-        $data->b64_json; // null
+    $api_gpt = trim(file_get_contents(_FILE_api_gpt_));
+    if(empty($api_gpt)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'OpenAI API KEY is empty', '', $message_id);
+        exit;
     }
 
-    $response->toArray(); // ['created' => 1589478378, data => ['url' => 'https://oaidalleapiprodscus...', ...]]
+    // gpt-3.5-turbo
+    $ImgData = \modules\openai\services\sOpenAI::instance()->getImg($api_gpt, $message_text);
+    if(!empty($ImgData['error'])){
+        exit(json_encode($ImgData));
+    }
 
-    $fileName='';
-    if(!empty($response['data'][0]['url'])){
+    if(!empty($ImgData['url'])){
         // save img
         $fileName = $dir.'/'.time().'.png';
-        file_put_contents($fileName, file_get_contents($response['data'][0]['url']));
+        file_put_contents($fileName, file_get_contents($ImgData['url']));
 
         sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $message_text, $message_id);
         exit;
@@ -203,6 +190,6 @@ if ($pos2 !== false) {
 }
 
 // Если не предусмотрен ответ
-sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ не предусмотрен');
+sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ не предусмотрен', '', $message_id);
 exit;
 

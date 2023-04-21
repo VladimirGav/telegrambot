@@ -1,23 +1,38 @@
-## Как создать телеграм-бота
-### Создание бота в telegram
+# Как создать телеграм-бота
+
+## Возможности бота
+### Пишем телеграм-боту и получаем ответы от обработчика:
+- Любой запрос - Администратор может добавлять собственные ответы на запросы в файле [telegrambotapi.php](www/examples/telegrambotapi.php)
+- /ai - задаем любой вопрос. Отвечает ИИ OpenAI ChatGPT.
+- /img - описание картинки. ИИ OpenAI рисует картинку в ответ.
+
+## Создание бота в Telegram
 1. Заходим в Telegram и добавляем @BotFather
 2. Пишем `/start`
 3. Пишем `/newbot` - Новый бот
-4. Пишем `Любое название`"` - Имя бота
+4. Пишем `Любое название` - Имя бота
 5. Пишем `NameYouBot` - Логин бота, должен заканчиваться на bot
 Если все в порядке приходит токен бота примерно такой `7345887:AAElClcpnLz8fGX2vEEaa`
 
-### Задаем телеграм-боту url адрес для обработки входящих сообщений и отправки ответов
+## Установка обработчика ответов на Windows Скоро!!!
+Видео инструкция Скоро!!!
+1. Скачиваем zip архив репозитория VladimirGav/telegrambot на компьютер и распаковываем.
+2. Запускаем файл [forwindows/StartBot.bat](forwindows/StartBot.bat) и при первом запуске вводим API ключи и все.
+Пока консоль запущена, она будет обрабатывать сообщения, вы можете свернуть консоль.
+
+## Установка обработчика ответов на хостинг
+Видео инструкция https://youtu.be/D8sZ51KYVJY
 1. Загружаем папку [www/examples](www/examples) в корень сайта.
 2. Загружаем папку [backend](backend) за пределы корня сайта.
 3. Запускаем файл  [www/examples/telegrambotsettings.php](www/examples/telegrambotsettings.php) , вводим токен бота и URL адрес (только https) к обработчику сообщений [www/examples/telegrambotapi.php](www/examples/telegrambotapi.php)
-4. Пишем телеграм-боту и получаем ответы от обработчика:
-- /ai - любой вопрос. Отвечает ChatGPT
-- /img - описание картинки. - нейросеть рисует картинку
 
 ### Автоматическая публикация сообщений в телеграм канал
 1. Назначьте телеграм-бота администратором в чате/канале
 2. Укажите имя канала `@NameYouChannel` в файле [www/examples/telegramsendchat.php](www/examples/telegramsendchat.php) и выполните его.
+
+## Ключи API
+- Все ключи с API хранятся в папке /telegrambot/backend/settings , вы всегда можете их отредактировать.
+- OpenAI API KEY вы можете получить по ссылке https://platform.openai.com/account/api-keys
 
 ### Описание файлов
 1. [backend/core/installComposer.php](backend/core/installComposer.php) - Класс для установки composer
@@ -26,3 +41,5 @@
 4. [www/examples/telegrambotsettings.php](www/examples/telegrambotsettings.php) - Пример настройки связи между телеграм ботом и обработчиком на php
 5. [www/examples/telegrambotapi.php](www/examples/telegrambotapi.php) - Пример обработчика сообщений бота на php
 6. [www/examples/telegramsendchat.php](www/examples/telegramsendchat.php) - Пример отправки сообщений в канал/чат
+
+Разработчик: VladimirGav

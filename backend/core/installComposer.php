@@ -163,12 +163,15 @@ class installComposer
         $PHP_BINDIR_p = 'php';
         if(!empty(getenv('PHPBIN'))){
             $PHP_BINDIR_p = getenv('PHPBIN'); // windows
-            $PHP_BINDIR_p = str_replace('\\', "/", $PHP_BINDIR_p);
         } else {
             if(!empty(PHP_BINARY)){
                 $PHP_BINDIR_p = PHP_BINDIR.'/php'; // linux
             }
         }
+        if(defined('_PHP_Path_dir_')){
+            $PHP_BINDIR_p = _PHP_Path_dir_.'/php';
+        }
+        $PHP_BINDIR_p = str_replace('\\', "/", $PHP_BINDIR_p);
         return $PHP_BINDIR_p;
     }
 }

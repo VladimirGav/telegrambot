@@ -14,37 +14,39 @@ require_once __DIR__.'/../../backend/defines.php';
 use modules\telegram\services\sTelegram;
 
 ?>
+<div class="telegramSetContent">
 <p><b>Создание токена/бота</b></p>
 <p>Заходим в Telegram и добавляем <a target="_blank" href="https://t.me/BotFather">@BotFather</a></p>
-<p>Пишем ему:<br>
+<p>Пишем ему:</p>
+    <code>
     "/start" - Старт<br>
     "/newbot" - Новый бот<br>
-    "Любое название" - Имя бота<br>
-    "NameYoubot" - Логин бота, должен заканчиваться на bot<br>
-    Если все в порядке приходит токен бота примерно такой "7345887:AAElClcpnLz8fGX2vEEaa"<br>
-
-</p>
+    "Любое название бота" - Имя бота<br>
+    "Name_bot" - Логин бота, должен заканчиваться на bot<br>
+        </code>
+    <p>Если все в порядке приходит токен бота примерно такой "7345887:AAElClcpnLz8fGX2vEEaa"</p>
 <form method="post">
     <p>Введите токен</p>
     <input name="bot_token" type="text" placeholder="7345887:AAElClcpnLz8fGX2vEEaa" value="">
 
-    <p>Введите url api бота</p>
+    <p>Введите url api бота, требуется с https</p>
     <input name="website_url" type="text" value="<?= _HOME_URL_ ?>/examples/telegrambotapi.php">
 
-    <p>Введите <a target="_blank" href="https://platform.openai.com/account/api-keys">api ChatGPT</a> (по желанию, будет работать команда: /ai ваш вопрос к ChatGPT)</p>
+    <p>Введите <a target="_blank" href="https://platform.openai.com/account/api-keys">API KEY ChatGPT</a> (по желанию). Будут работать команды:</p>
+    <code>
+        /ai - любой вопрос. Отвечает ChatGPT<br>
+        /img - описание картинки. - нейросеть ChatGPT рисует картинку<br>
+    </code>
     <input name="api_gpt" type="text" value="">
+
+    <!--<p>Stable Diffusion. <a target="_blank" href="https://beta.dreamstudio.ai/account">API KEY DreamStudio's</a> (по желанию). Будут работать команды:</p>
+    <code>
+        /sd - описание картинки. - нейросеть Stable Diffusion рисует картинку<br>
+    </code>
+    <input name="api_sd" type="text" value="">-->
 
     <button type="submit">Сохранить и задать url для бота</button>
 </form>
-
-
-<style>
-    input {
-        height: 40px;
-        width: 100%;
-        margin-bottom: 20px;
-    }
-</style>
 
 
 <?php
@@ -70,4 +72,32 @@ if(!empty($dataPost['api_gpt'])){
 
 
 ?>
+</div>
+
+<style>
+    .telegramSetContent {
+        max-width: 1000px;
+        /* margin: 0 auto; */
+        background: #f3f3f3;
+        padding: 15px;
+        border-radius: 15px;
+    }
+    .telegramSetContent * {
+        font-size: 14px;
+    }
+    .telegramSetContent input {
+        height: 40px;
+        width: 100%;
+        margin-bottom: 5px;
+        margin-top: 5px;
+    }
+    .telegramSetContent button {
+        background: #5290ff;
+        color: #fff;
+        border: none;
+        padding: 8px 10px;
+        text-transform: uppercase;
+        margin-top: 10px;
+    }
+</style>
 

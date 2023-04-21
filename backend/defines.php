@@ -1,6 +1,11 @@
 <?php
 $backend = __DIR__;
 
+// Если запускаем через консоль windows
+if(!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1]=='console' && !empty($_SERVER['argv'][2])){
+    define('_PHP_Path_dir_', $_SERVER['argv'][2]);
+}
+
 // Установим composer
 $dirComposer = $backend.'/composer';
 require_once $backend .'/core/installComposer.php';

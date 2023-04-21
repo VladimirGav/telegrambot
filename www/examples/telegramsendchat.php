@@ -17,7 +17,7 @@ use modules\telegram\services\sTelegram;
 if(!file_exists(_FILE_bot_token_)){
     exit(_FILE_bot_token_.' is empty');
 }
-$bot_token = file_get_contents(_FILE_bot_token_);
+$bot_token = trim(file_get_contents(_FILE_bot_token_));
 
 
 // Отправка в чат или канал
