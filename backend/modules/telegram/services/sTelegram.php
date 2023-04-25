@@ -107,6 +107,12 @@ class sTelegram
         return $dataMessage;
     }
 
+    public function checkApi($bot_token){
+        $telegram = new \Telegram\Bot\Api($bot_token);
+        $response = $telegram->getMe();
+        return $response;
+    }
+
     /**
      * Use this method to remove a previously set outgoing webhook.
      * @param $bot_token

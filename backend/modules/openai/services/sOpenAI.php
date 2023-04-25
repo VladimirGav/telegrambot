@@ -88,5 +88,24 @@ class sOpenAI
     }
 
 
+    public function getAudioTranscribe($token, $audioFile){
+        if(!file_exists($audioFile)){
+            return ['error' => 1, 'data' => 'audioFile not found'];
+        }
+        $client = \OpenAI::client($token);
+        $response = $client->audio()->transcribe([
+            'model' => 'whisper-1',
+            'file' => fopen($audioFile, 'r'),
+            'response_format' => 'verbose_json',
+        ]);
+
+        $response->toArray(); // ['task' => 'transcribe', ...]
+
+        if(!empty($response['text'])){
+            return ['error' => 0, 'data' => 'Success', 'text'=>$response['text']];
+        }
+
+        return ['error' => 1, 'data' => 'Unknown error'];
+    }
 
 }

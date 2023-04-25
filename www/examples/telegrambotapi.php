@@ -128,7 +128,7 @@ if ($pos2 !== false) {
     }
 
     // gpt-3.5-turbo
-    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, 'Перечисли все океаны');
+    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $message_text);
     if(!empty($ChatGPTAnswerData['error'])){
         exit(json_encode($ChatGPTAnswerData));
     }
