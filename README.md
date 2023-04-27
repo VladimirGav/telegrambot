@@ -15,7 +15,7 @@
 Если все в порядке приходит Telegram Bot API KEY примерно такой `7345887:AAElClcpnLz8fGX2vEEaa`
 
 ## Установка обработчика ответов на Windows 10, 11
-Видео инструкция https://youtube.com/shorts/N1goZIBcoGo
+Видео инструкция https://youtu.be/OYy3Sq8wig0
 1. Скачиваем zip архив репозитория VladimirGav/telegrambot на компьютер и распаковываем.
 2. Запускаем файл forwindows/StartBot.bat и при первом запуске вводим API ключи и все.
 Пока консоль запущена, она будет обрабатывать сообщения, вы можете свернуть консоль.
