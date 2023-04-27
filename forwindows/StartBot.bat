@@ -52,10 +52,28 @@ echo !api_gpt_str!>%file_api_gpt%
     echo Telegram Bot API KEY saved to file %file_api_gpt%
 )
 
+REM Install winget Git.Git
+winget list --id Git.Git >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+	echo Git Ok!
+) else (
+	echo Install winget Git.Git
+	winget install --id Git.Git -e --source winget
+)
+
+REM Install Microsoft Visual C++ Redistributable for Visual Studio
+winget list --id Microsoft.VCRedist.2015+.x64 >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+	echo Microsoft Visual C++ Redistributable for Visual Studio Ok!
+) else (
+	echo Install Microsoft Visual C++ Redistributable for Visual Studio
+	winget install Microsoft.VCRedist.2015+.x64
+)
+
 REM if there is no php, then install it
 if exist "%php_path%" (
 REM echo The folder php is exist.
-echo Software done!
+echo PHP Ok!
 ) else (
 
 REM download zip php and unzip in ./php
@@ -79,7 +97,7 @@ echo extension=pdo_mysql >> %FILE_PHP_INI_PATH%
 echo extension_dir = "%php_path%/ext" >> %FILE_PHP_INI_PATH%
 echo curl.cainfo = "%php_path%/extras/ssl/cacert.pem" >> %FILE_PHP_INI_PATH%
 
-echo Software done!
+echo PHP Ok!
 )
 
 echo Start Telegram bot...

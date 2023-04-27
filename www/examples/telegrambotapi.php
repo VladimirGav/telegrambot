@@ -22,6 +22,12 @@ $bot_token = trim(file_get_contents(_FILE_bot_token_));
 // Подключаемся к апи
 $telegram = new \Telegram\Bot\Api($bot_token);
 
+/*$checkApi = sTelegram::instance()->checkApi($bot_token);
+if(!empty($checkApi['error'])){
+    echo json_encode($checkApi);
+    exit;
+}*/
+
 // Если запускаем через консоль, а не используем Telegram Webhook
 if(!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1]=='console'){
     $removeWebhook = sTelegram::instance()->removeWebhook($bot_token); // Удаляем привязку к Telegram Webhook

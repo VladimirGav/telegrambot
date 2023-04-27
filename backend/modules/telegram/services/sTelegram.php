@@ -109,8 +109,12 @@ class sTelegram
 
     public function checkApi($bot_token){
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->getMe();
-        return $response;
+        try {
+            $response = $telegram->getMe();
+        } catch (\Exception $e) {
+            return ['error'=>1, 'data' => 'Telegram Bot API Token error'];
+        }
+        return ['error'=>0, 'data' => $response];
     }
 
     /**
