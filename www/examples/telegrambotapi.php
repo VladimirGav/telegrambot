@@ -179,7 +179,7 @@ if ($pos2 !== false) {
     }
 
     // gpt-3.5-turbo
-    $ImgData = \modules\openai\services\sOpenAI::instance()->getImg($api_gpt, $message_text);
+    $ImgData = \modules\openai\services\sOpenAI::instance()->getImg($api_gpt, $message_text, '256x256');
     if(!empty($ImgData['error'])){
         exit(json_encode($ImgData));
     }
