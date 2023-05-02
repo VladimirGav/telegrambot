@@ -20,6 +20,14 @@
 2. Запускаем файл forwindows/StartBot.bat и при первом запуске вводим API ключи и все.
 Пока консоль запущена, она будет обрабатывать сообщения, вы можете свернуть консоль.
 
+## Установка обработчика ответов для других Windows
+Видео инструкция https://youtu.be/OYy3Sq8wig0
+1. Скачиваем zip архив репозитория VladimirGav/telegrambot на компьютер и распаковываем.
+- Устанавливаем вручную 64-bit Git for Windows Setup из https://git-scm.com/download/win
+- Устанавливаем вручную Microsoft Visual C++ Redistributable https://aka.ms/vs/17/release/vc_redist.x64.exe
+2. Запускаем файл forwindows/StartBotWinOther.bat и при первом запуске вводим API ключи и все.
+Пока консоль запущена, она будет обрабатывать сообщения, вы можете свернуть консоль.
+
 ## Установка обработчика ответов на хостинг
 Видео инструкция https://youtu.be/D8sZ51KYVJY
 1. Загружаем папку [www/examples](www/examples) в корень сайта.
