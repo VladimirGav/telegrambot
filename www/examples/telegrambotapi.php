@@ -37,6 +37,17 @@ if(!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1]=='console'){
     $dataMessage = sTelegram::instance()->getWebhookLastMessage($bot_token);
 }
 
+// Если новый участник, то удалим сообщение о вступлении и отправим приветствие
+if(!empty($dataMessage['message']['new_chat_member']['id'])){
+    $member_username='';
+    if(!empty($dataMessage['message']['new_chat_member']['first_name'])){
+        $member_username='<a href="tg://user?id='.$dataMessage['message']['new_chat_member']['id'].'">'.$dataMessage['message']['new_chat_member']['first_name'].'</a>';
+    }
+    sTelegram::instance()->removeMessage($bot_token, $dataMessage['message']['chat']['id'],  $dataMessage['message']['message_id']);
+    sTelegram::instance()->sendMessage($bot_token, $dataMessage['message']['chat']['id'],  'Привет '.$member_username.'! Добро пожаловать в группу!');
+    exit;
+}
+
 if(empty($dataMessage['message']['message_id'])){
     //echo json_encode(['error'=> 1, 'data' => 'message_id empty']);
     exit;
@@ -57,10 +68,13 @@ $message_text = $dataMessage['message']['text']; // Текст сообщени�
 
 // К нижнему регистру
 $messageTextLower = mb_strtolower($message_text);
+$messageTextLower = str_replace('  ', ' ', $messageTextLower);
+$messageTextLower = trim($messageTextLower);
 
 // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower);
 $messageTextLower = preg_replace('/(.*)(\/img@[^ ]*)(.*)/', '/img $1$3', $messageTextLower);
+$messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower);
 
 // Если первое сообщение
 if($messageTextLower=='/start'){
@@ -108,16 +122,12 @@ if($messageTextLower=='пример кнопки'){
 }
 
 // Пример chatGPT
-$pos2 = stripos($message_text, '/ai');
+$pos2 = stripos($messageTextLower, '/ai');
 if ($pos2 !== false) {
-    // Удаляем все лишнее
-    $message_text = trim($message_text);
-    $message_text = str_replace('/ai', '', $message_text);
-    $message_text = str_replace('  ', ' ', $message_text);
-    $message_text  = mb_strtolower($message_text);
+    $messageTextLower = str_replace('/ai', '', $messageTextLower);
 
     // Если пустой, отправляем пример
-    if(empty($message_text)){
+    if(empty($messageTextLower)){
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /ai Ты можешь отвечать на вопросы?', '', $message_id);
         exit;
     }
@@ -134,7 +144,7 @@ if ($pos2 !== false) {
     }
 
     // gpt-3.5-turbo
-    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $message_text);
+    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $messageTextLower);
     if(!empty($ChatGPTAnswerData['error'])){
         exit(json_encode($ChatGPTAnswerData));
     }
@@ -146,8 +156,10 @@ if ($pos2 !== false) {
 }
 
 // АИ Рисуем картинку по запросу
-$pos2 = stripos($message_text, '/img');
+$pos2 = stripos($messageTextLower, '/img');
 if ($pos2 !== false) {
+    $messageTextLower = str_replace('/img', '', $messageTextLower);
+
     $dir = __DIR__.'/uploads/images';
     if(!file_exists($dir)){
         if (!mkdir($dir, 0777, true)) {
@@ -155,14 +167,8 @@ if ($pos2 !== false) {
         }
     }
 
-    // Удаляем все лишнее
-    $message_text = trim($message_text);
-    $message_text = str_replace('/img', '', $message_text);
-    $message_text = str_replace('  ', ' ', $message_text);
-    $message_text  = mb_strtolower($message_text);
-
     // Если пустой, отправляем пример
-    if(empty($message_text)){
+    if(empty($messageTextLower)){
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /img Рыжая лиса в лесу', '', $message_id);
         exit;
     }
@@ -179,7 +185,7 @@ if ($pos2 !== false) {
     }
 
     // gpt-3.5-turbo
-    $ImgData = \modules\openai\services\sOpenAI::instance()->getImg($api_gpt, $message_text, '256x256');
+    $ImgData = \modules\openai\services\sOpenAI::instance()->getImg($api_gpt, $messageTextLower, '256x256');
     if(!empty($ImgData['error'])){
         exit(json_encode($ImgData));
     }
@@ -189,7 +195,56 @@ if ($pos2 !== false) {
         $fileName = $dir.'/'.time().'.png';
         file_put_contents($fileName, file_get_contents($ImgData['url']));
 
-        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $message_text, $message_id);
+        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $messageTextLower, $message_id);
+        exit;
+    }
+
+}
+
+// StableDiffusion Рисует картинку по запросу
+$pos2 = stripos($messageTextLower, '/sd');
+if ($pos2 !== false) {
+    $messageTextLower = str_replace('/sd', '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    $AllowedModelsArr=[
+        mb_strtolower('stabilityai/stable-diffusion-2-1-base'),
+        mb_strtolower('XpucT/Deliberate'),
+        mb_strtolower('nitrosocke/Ghibli-Diffusion'),
+    ];
+    $model_id = $AllowedModelsArr[0];
+
+    $MessageArr = explode(' ', $messageTextLower);
+    if(!empty($MessageArr[0]) && $MessageArr[0]=='models'){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'models: '.implode(PHP_EOL, $AllowedModelsArr), '', $message_id);
+        exit;
+    }
+    // Проверим первое слово, если это требуемая модель, то применяем
+    if(!empty($MessageArr[0]) && in_array($MessageArr[0], $AllowedModelsArr)){
+        $model_id = $MessageArr[0];
+        $messageTextLower = str_replace($model_id, '', $messageTextLower);
+    }
+
+    $dir = __DIR__.'/uploads/images';
+    if(!file_exists($dir)){
+        if (!mkdir($dir, 0777, true)) {
+            die('Не удалось создать директории...');
+        }
+    }
+
+    // Если пустой, отправляем пример
+    if(empty($messageTextLower)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /sd stabilityai/stable-diffusion-2-1-base fox in the forest', '', $message_id);
+        exit;
+    }
+
+    $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getImg($messageTextLower, $model_id);
+    if(!empty($ImgData['error'])){
+        exit(json_encode($ImgData));
+    }
+
+    if(!empty($ImgData['resultData']['imgs'][0]['FilePath'])){
+        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], 'model: '.$model_id.'; promt: '.$messageTextLower, $message_id);
         exit;
     }
 
