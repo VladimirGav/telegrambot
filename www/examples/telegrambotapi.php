@@ -6,6 +6,15 @@
  * Copyright (c)
  */
 
+$BotSettings=[
+    'enableChatGPT' => 1, // 1 - включить ChatGPT команду /ai; 0 - выключить
+    'enableOpenAiImg' => 1, // 1 - включить OpenAi Img команду /img; 0 - выключить
+    'enableWelcome' => 1, // 1 - включить приветствие новых участников; 0 - выключить
+    'enableLinkBlocking' => 1, // 1 - включить блокирование ссылок; 0 - выключить
+];
+
+$superUsersIds = ['000']; // id пользователи с привилегиями
+
 // Устанавливаем и подключаем Composer
 require_once __DIR__.'/../../backend/defines.php';
 
@@ -38,7 +47,7 @@ if(!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1]=='console'){
 }
 
 // Если новый участник, то удалим сообщение о вступлении и отправим приветствие
-if(!empty($dataMessage['message']['new_chat_member']['id'])){
+if(!empty($dataMessage['message']['new_chat_member']['id']) && !empty($BotSettings['enableWelcome'])){
     $member_username='';
     if(!empty($dataMessage['message']['new_chat_member']['first_name'])){
         $member_username='<a href="tg://user?id='.$dataMessage['message']['new_chat_member']['id'].'">'.$dataMessage['message']['new_chat_member']['first_name'].'</a>';
@@ -48,6 +57,10 @@ if(!empty($dataMessage['message']['new_chat_member']['id'])){
     exit;
 }
 
+if(!empty($dataMessage['message']['from']['is_bot'])){
+    echo json_encode(['error'=> 1, 'data' => 'is_bot']);
+    exit;
+}
 if(empty($dataMessage['message']['message_id'])){
     //echo json_encode(['error'=> 1, 'data' => 'message_id empty']);
     exit;
@@ -56,15 +69,33 @@ if(empty($dataMessage['message']['chat']['id'])){
     echo json_encode(['error'=> 1, 'data' => 'chat_id empty']);
     exit;
 }
-if(empty($dataMessage['message']['text'])){
+/*if(empty($dataMessage['message']['text'])){
     echo json_encode(['error'=> 1, 'data' => 'text empty']);
     exit;
-}
+}*/
 
 // Получим данные от пользователя
+$from_id = $dataMessage['message']['from']['id'];
 $message_id = $dataMessage['message']['message_id']; // Id сообщения
 $message_chat_id = $dataMessage['message']['chat']['id']; // Id чата
-$message_text = $dataMessage['message']['text']; // Текст сообщения
+$message_text = ''; // Текст сообщения
+if(!empty($dataMessage['message']['text'])){
+    $message_text = $dataMessage['message']['text'];
+} else {
+    if(!empty($dataMessage['message']['caption'])){
+        $message_text = $dataMessage['message']['caption'];
+    }
+}
+
+// Если ссылки запрещены, то удлаляем сообщение
+if(!empty($BotSettings['enableLinkBlocking'])){
+    $AllowedMessages = sTelegram::instance()->checkAllowedMessages($dataMessage, ['mention', 'url'], $superUsersIds);
+    if(!empty($AllowedMessages['error'])){
+        sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $message_id);
+        $member_username='<a href="tg://user?id='.$from_id.'">'.$dataMessage['message']['from']['first_name'].'</a>';
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id,  $member_username.', размещение ссылок запрещено.', '');
+    }
+}
 
 // К нижнему регистру
 $messageTextLower = mb_strtolower($message_text);
@@ -75,6 +106,12 @@ $messageTextLower = trim($messageTextLower);
 $messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower);
 $messageTextLower = preg_replace('/(.*)(\/img@[^ ]*)(.*)/', '/img $1$3', $messageTextLower);
 $messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower);
+
+// Если узнаем id пользователя
+if($messageTextLower=='/user_id'){
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'User_id: '.$from_id, '', $message_id);
+    exit;
+}
 
 // Если первое сообщение
 if($messageTextLower=='/start'){
@@ -123,7 +160,7 @@ if($messageTextLower=='пример кнопки'){
 
 // Пример chatGPT
 $pos2 = stripos($messageTextLower, '/ai');
-if ($pos2 !== false) {
+if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
     $messageTextLower = str_replace('/ai', '', $messageTextLower);
 
     // Если пустой, отправляем пример
@@ -157,7 +194,7 @@ if ($pos2 !== false) {
 
 // АИ Рисуем картинку по запросу
 $pos2 = stripos($messageTextLower, '/img');
-if ($pos2 !== false) {
+if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
     $messageTextLower = str_replace('/img', '', $messageTextLower);
 
     $dir = __DIR__.'/uploads/images';
@@ -210,6 +247,7 @@ if ($pos2 !== false) {
     $AllowedModelsArr=[
         mb_strtolower('stabilityai/stable-diffusion-2-1-base'),
         mb_strtolower('XpucT/Deliberate'),
+        mb_strtolower('darkstorm2150/Protogen_Nova_Official_Release'),
         mb_strtolower('nitrosocke/Ghibli-Diffusion'),
     ];
     $model_id = $AllowedModelsArr[0];
@@ -232,13 +270,29 @@ if ($pos2 !== false) {
         }
     }
 
-    // Если пустой, отправляем пример
-    if(empty($messageTextLower)){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /sd stabilityai/stable-diffusion-2-1-base fox in the forest', '', $message_id);
-        exit;
+    if(!empty($dataMessage['message']['photo'])){
+        // Если генерация из изображения
+
+        $file_id=$dataMessage['message']['photo'][array_key_last($dataMessage['message']['photo'])]['file_id'];
+        $saveFileData = sTelegram::instance()->saveFile($bot_token, $file_id, __DIR__.'/uploads/received_files');
+        if(!empty($saveFileData['error'])){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'saveFile error', '', $message_id);
+            exit;
+        }
+        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getImg2Img($model_id, $messageTextLower, $saveFileData['file']);
+    } else {
+        // Если генерация из текста
+
+        // Если пустой, отправляем пример
+        if(empty($messageTextLower)){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /sd stabilityai/stable-diffusion-2-1-base fox in the forest', '', $message_id);
+            exit;
+        }
+
+        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getTxt2Img($model_id, $messageTextLower);
     }
 
-    $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getImg($messageTextLower, $model_id);
+
     if(!empty($ImgData['error'])){
         exit(json_encode($ImgData));
     }
@@ -251,6 +305,6 @@ if ($pos2 !== false) {
 }
 
 // Если не предусмотрен ответ
-sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ не предусмотрен', '', $message_id);
+//sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ не предусмотрен', '', $message_id);
 exit;
 

@@ -437,10 +437,45 @@ class sTelegram
         $response = $telegram->getUpdates();
     }
 
-    public function getFile($bot_token)
+    public function getFile($bot_token, $file_id)
     {
         $telegram = new \Telegram\Bot\Api($bot_token);
-        $response = $telegram->getFile(['file_id' => 'ABC12345XYZ6789...']);
+        $response = $telegram->getFile(['file_id' => $file_id]);
+        return $response;
+    }
+
+    public function saveFile($bot_token, $file_id, $folderSave)
+    {
+        $FileData = $this->getFile($bot_token, $file_id);
+        $FileData = $FileData->toArray();
+        $fileInfo = pathinfo($FileData['file_path']);
+        $filePath = $folderSave.'/'.time().rand(10000, 99999).'.'.$fileInfo['extension'];
+        $filePath = str_replace("//", "/", $filePath);
+        $content = file_get_contents('https://api.telegram.org/file/bot'.$bot_token.'/'.$FileData['file_path']);
+        if (!file_exists($folderSave)) {
+            mkdir($folderSave, 0777, true);
+        }
+        file_put_contents($filePath, $content);
+        return ['error' => 0, 'data' => 'Success', 'file'=>$filePath];
+    }
+
+    public function checkAllowedMessages($messageData, $forbiddenArr=['mention', 'url'], $superUsersIds=[]){
+        // Если автоматическая дублирование в чат для комментариев, то пропускаем
+        if(!empty($messageData['message']['from']['id']) && $messageData['message']['from']['id']=='777000'){
+            return ['error'=> 0, 'data' => 'Success'];
+        }
+        if(in_array($messageData['message']['from']['id'], $superUsersIds)){
+            return ['error'=> 0, 'data' => 'Success'];
+        }
+        if(empty($messageData['message']['entities'])){
+            return ['error'=> 0, 'data' => 'Success'];
+        }
+        foreach ($messageData['message']['entities'] as $entitie){
+            if(in_array($entitie['type'], $forbiddenArr)){
+                return ['error'=> 1, 'data' => $entitie['type'].' forbidden.'];
+            }
+        }
+        return ['error'=> 0, 'data' => 'Success'];
     }
 
 
