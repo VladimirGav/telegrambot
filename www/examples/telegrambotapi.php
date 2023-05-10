@@ -6,17 +6,29 @@
  * Copyright (c)
  */
 
+// Устанавливаем и подключаем Composer
+require_once __DIR__.'/../../backend/defines.php';
+
+// Настройки по умолчанию, редактируйте в файле /telegrambot/backend/settings/bot_settings.json
 $BotSettings=[
     'enableChatGPT' => 1, // 1 - включить ChatGPT команду /ai; 0 - выключить
     'enableOpenAiImg' => 1, // 1 - включить OpenAi Img команду /img; 0 - выключить
     'enableWelcome' => 1, // 1 - включить приветствие новых участников; 0 - выключить
+    'enableGoodbye' => 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
     'enableLinkBlocking' => 1, // 1 - включить блокирование ссылок; 0 - выключить
+    'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка VladimirGavSD
+    'superUsersIds' => ['000','000'], // id пользователей с привилегиями
 ];
 
-$superUsersIds = ['000']; // id пользователи с привилегиями
-
-// Устанавливаем и подключаем Composer
-require_once __DIR__.'/../../backend/defines.php';
+// Подгружаем файл с индивидуальными настройками бота /telegrambot/backend/settings/bot_settings.json
+if(file_exists(_FILE_bot_settings_)){
+    $BotSettings = json_decode(file_get_contents(_FILE_bot_settings_), true);
+} else {
+    // Если индивидуальных настроек нет, то создадим их
+    $dirSettings = dirname(_FILE_bot_settings_);
+    if(!is_dir($dirSettings)) { mkdir($dirSettings, 0777, true); }
+    file_put_contents(_FILE_bot_settings_, json_encode($BotSettings));
+}
 
 /** Пример обработки сообщений телеграм бота */
 
@@ -57,6 +69,11 @@ if(!empty($dataMessage['message']['new_chat_member']['id']) && !empty($BotSettin
     exit;
 }
 
+// Если вышел участник, то удалим сообщение о выходе
+if(!empty($dataMessage['message']['left_chat_member']['id']) && !empty($BotSettings['enableGoodbye'])){
+    sTelegram::instance()->removeMessage($bot_token, $dataMessage['message']['chat']['id'],  $dataMessage['message']['message_id']);
+}
+
 if(!empty($dataMessage['message']['from']['is_bot'])){
     echo json_encode(['error'=> 1, 'data' => 'is_bot']);
     exit;
@@ -89,7 +106,7 @@ if(!empty($dataMessage['message']['text'])){
 
 // Если ссылки запрещены, то удлаляем сообщение
 if(!empty($BotSettings['enableLinkBlocking'])){
-    $AllowedMessages = sTelegram::instance()->checkAllowedMessages($dataMessage, ['mention', 'url'], $superUsersIds);
+    $AllowedMessages = sTelegram::instance()->checkAllowedMessages($dataMessage, ['mention', 'url'], $BotSettings['superUsersIds']);
     if(!empty($AllowedMessages['error'])){
         sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $message_id);
         $member_username='<a href="tg://user?id='.$from_id.'">'.$dataMessage['message']['from']['first_name'].'</a>';
@@ -102,18 +119,15 @@ $messageTextLower = mb_strtolower($message_text);
 $messageTextLower = str_replace('  ', ' ', $messageTextLower);
 $messageTextLower = trim($messageTextLower);
 
-// Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower);
-$messageTextLower = preg_replace('/(.*)(\/img@[^ ]*)(.*)/', '/img $1$3', $messageTextLower);
-$messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower);
-
 // Если узнаем id пользователя
+$messageTextLower = preg_replace('/(.*)(\/user_id@[^ ]*)(.*)/', '/user_id $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 if($messageTextLower=='/user_id'){
     sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'User_id: '.$from_id, '', $message_id);
     exit;
 }
 
 // Если первое сообщение
+$messageTextLower = preg_replace('/(.*)(\/start@[^ ]*)(.*)/', '/start $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 if($messageTextLower=='/start'){
     sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Привет, я бот', '', $message_id);
     exit;
@@ -159,6 +173,7 @@ if($messageTextLower=='пример кнопки'){
 }
 
 // Пример chatGPT
+$messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/ai');
 if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
     $messageTextLower = str_replace('/ai', '', $messageTextLower);
@@ -193,6 +208,7 @@ if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
 }
 
 // АИ Рисуем картинку по запросу
+$messageTextLower = preg_replace('/(.*)(\/img@[^ ]*)(.*)/', '/img $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/img');
 if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
     $messageTextLower = str_replace('/img', '', $messageTextLower);
@@ -239,8 +255,9 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
 }
 
 // StableDiffusion Рисует картинку по запросу
+$messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/sd');
-if ($pos2 !== false) {
+if ($pos2 !== false && !empty($BotSettings['StableDiffusion'])) {
     $messageTextLower = str_replace('/sd', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
@@ -270,6 +287,13 @@ if ($pos2 !== false) {
         }
     }
 
+    $promptArr = explode('negative',$messageTextLower);
+    $prompt = $promptArr [0];
+    $n_prompt='';
+    if(!empty($promptArr [1])){
+        $n_prompt = $promptArr [1];
+    }
+
     if(!empty($dataMessage['message']['photo'])){
         // Если генерация из изображения
 
@@ -279,17 +303,17 @@ if ($pos2 !== false) {
             sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'saveFile error', '', $message_id);
             exit;
         }
-        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getImg2Img($model_id, $messageTextLower, $saveFileData['file']);
+        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getImg2Img($model_id, $prompt, $n_prompt, $saveFileData['file']);
     } else {
         // Если генерация из текста
 
         // Если пустой, отправляем пример
         if(empty($messageTextLower)){
-            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /sd stabilityai/stable-diffusion-2-1-base fox in the forest', '', $message_id);
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /sd stabilityai/stable-diffusion-2-1-base fox in the forest negative water', '', $message_id);
             exit;
         }
 
-        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getTxt2Img($model_id, $messageTextLower);
+        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getTxt2Img($model_id, $prompt, $n_prompt);
     }
 
 
@@ -298,7 +322,7 @@ if ($pos2 !== false) {
     }
 
     if(!empty($ImgData['resultData']['imgs'][0]['FilePath'])){
-        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], 'model: '.$model_id.'; promt: '.$messageTextLower, $message_id);
+        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], 'model: '.$model_id.'; prompt: '.$prompt.'; negative: '.$n_prompt, $message_id);
         exit;
     }
 

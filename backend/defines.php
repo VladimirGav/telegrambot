@@ -31,6 +31,7 @@ if (!is_dir($dirSettings)) {
         exit('Не удалось создать папку для настроек '.$dirSettings);
     }
 }
+define('_FILE_bot_settings_', $dirSettings.'/bot_settings.json');
 define('_FILE_bot_token_', $dirSettings.'/bot_token.txt');
 define('_FILE_api_gpt_', $dirSettings.'/api_gpt.txt');
 

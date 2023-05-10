@@ -26,21 +26,23 @@ class sStableDiffusion
 
     public $pathStableDiffusion = 'D:/sd/stablediffusion';
 
-    public function getTxt2Img($model_id, $prompt){
+    public function getTxt2Img($model_id, $prompt, $n_prompt){
         $sdData=[];
         $sdData['type']='txt2img';
         $sdData['prompt']=$prompt;
+        $sdData['n_prompt']=$n_prompt;
         $sdData['model_id']=$model_id;
 
         $SdImg = $this->getSdImg($sdData);
         return $SdImg;
     }
 
-    public function getImg2Img($model_id, $prompt, $img_original){
+    public function getImg2Img($model_id, $prompt, $n_prompt, $img_original){
         $sdData=[];
         $sdData['type']='img2img';
         $sdData['img_original']=$img_original;
         $sdData['prompt']=$prompt;
+        $sdData['n_prompt']=$n_prompt;
         $sdData['model_id']=$model_id;
 
         $SdImg = $this->getSdImg($sdData);
@@ -51,6 +53,7 @@ class sStableDiffusion
         // Получаем данные
         $type = (!empty($sdData['type']))?mb_strtolower($sdData['type']):'txt2img'; // txt2img, img2img
         $prompt = (!empty($sdData['prompt']))?$sdData['prompt']:'';
+        $n_prompt = (!empty($sdData['n_prompt']))?$sdData['n_prompt']:'';
         $model_id = (!empty($sdData['model_id']))?$sdData['model_id']:'stabilityai/stable-diffusion-2-1-base';
         $imgs_count = (!empty($sdData['imgs_count']))?$sdData['model_id']:1;
         $size = (!empty($sdData['size']))?$sdData['size']:'';
@@ -90,6 +93,7 @@ class sStableDiffusion
         $inputDataArr['imgs_count'] = $imgs_count;
         $inputDataArr['model_id'] = $model_id;
         $inputDataArr['prompt'] = $prompt;
+        $inputDataArr['n_prompt'] = $n_prompt;
         $inputDataArr['imgs_dir'] = $dirImgs;
         if(!empty($sdData['img_original'])){
             $inputDataArr['img_original'] = $sdData['img_original'];
