@@ -19,8 +19,8 @@ echo https://github.com/VladimirGav/telegrambot
 
 set php_path=%cd%\php
 
-set php_zip_url=https://windows.php.net/downloads/releases/php-8.2.5-Win32-vs16-x64.zip
-set php_archive_name=php-8.2.5-Win32-vs16-x64.zip
+REM set php_zip_url=https://windows.php.net/downloads/releases/php-8.2.6-Win32-vs16-x64.zip
+set php_archive_name=php-8.2.6-Win32-vs16-x64.zip
 set extract_folder=php
 
 set cacert_url=https://curl.se/ca/cacert.pem
@@ -77,9 +77,9 @@ echo PHP Ok!
 ) else (
 
 REM download zip php and unzip in ./php
-curl -o %php_archive_name% %php_zip_url%
+REM curl -o %php_archive_name% %php_zip_url%
 powershell -Command "Expand-Archive -Path %php_archive_name% -DestinationPath ./%extract_folder%"
-del %php_archive_name%
+REM del %php_archive_name%
 
 REM download cacert.pem in in ./php/extras/ssl/cacert.pem
 curl -o %cacert_path% %cacert_url%
