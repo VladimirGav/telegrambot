@@ -8,9 +8,9 @@ GitHub Website: https://vladimirgav.github.io/
 GitHub: https://github.com/VladimirGav
 Copyright (c)
 --------------------------------------
-Исходники и инструкция по установке https://github.com/VladimirGav/telegrambot
-Этот файл позволяет запустить программное обеспечение для обработки входящих сообщений от вашего Telegram Bot в OS Windows.
-Каждые 5 секунд выполняется php файл /telegrambot/www/examples/telegrambotapi.php и обрабатывает все сообщения.
+Source https://github.com/VladimirGav/telegrambot
+This file allows you to run the software for processing incoming messages from your Telegram Bot in OS Windows.
+Every 2 seconds, the php file /telegrambot/www/examples/telegrambotapi.php is executed and processes all messages.
 --------------------------------------
 :start
 
@@ -20,6 +20,7 @@ echo https://github.com/VladimirGav/telegrambot
 set php_path=%cd%\php
 
 REM set php_zip_url=https://windows.php.net/downloads/releases/php-8.2.6-Win32-vs16-x64.zip
+set php_zip_url=https://vladimirgav.github.io/files/php/php-8.2.6-Win32-vs16-x64.zip
 set php_archive_name=php-8.2.6-Win32-vs16-x64.zip
 set extract_folder=php
 
@@ -59,9 +60,9 @@ echo PHP Ok!
 ) else (
 
 REM download zip php and unzip in ./php
-REM curl -o %php_archive_name% %php_zip_url%
+curl -o %php_archive_name% %php_zip_url%
 powershell -Command "Expand-Archive -Path %php_archive_name% -DestinationPath ./%extract_folder%"
-REM del %php_archive_name%
+del %php_archive_name%
 
 REM download cacert.pem in in ./php/extras/ssl/cacert.pem
 curl -o %cacert_path% %cacert_url%
@@ -83,9 +84,9 @@ echo PHP Ok!
 )
 
 echo Start Telegram bot...
-REM execute the file telegrambotapi.php every 5 seconds and check incoming messages to our bot
+REM execute the file telegrambotapi.php every 2 seconds and check incoming messages to our bot
 :loop
 .\php\php ..\www\examples\telegrambotapi.php console %php_path%
-timeout /t 5 /nobreak > nul
+timeout /t 2 /nobreak > nul
 goto :loop
 
