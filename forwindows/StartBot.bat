@@ -101,6 +101,30 @@ echo curl.cainfo = "%php_path%/extras/ssl/cacert.pem" >> %FILE_PHP_INI_PATH%
 echo PHP Ok!
 )
 
+REM Install nodejs
+set nodejs_path=%cd%\nodejs\node-v18.16.0-win-x64
+set nodejs_zip_url=https://vladimirgav.github.io/files/nodejs/node-v18.16.0-win-x64.zip
+set nodejs_archive_name=node-v18.16.0-win-x64.zip
+set nodejs_extract_folder=nodejs
+set nodejs_project_path=%nodejs_path%\project
+set nodejs_json_path=%cd%\nodejs\package.json
+
+REM if there is no nodejs, then install it
+if exist "%nodejs_path%" (
+REM echo The folder nodejs is exist.
+echo nodejs Ok!
+) else (
+REM download zip nodejs and unzip in ./nodejs
+curl -o %nodejs_archive_name% %nodejs_zip_url%
+powershell -Command "Expand-Archive -Path %nodejs_archive_name% -DestinationPath ./%nodejs_extract_folder%"
+del %nodejs_archive_name%
+
+md %nodejs_project_path%
+powershell -Command "%nodejs_path%\npm --prefix %nodejs_project_path% install web3"
+
+echo nodejs Ok!
+)
+
 echo Start Telegram bot...
 REM execute the file telegrambotapi.php every 2 seconds and check incoming messages to our bot
 :loop

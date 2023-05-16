@@ -17,7 +17,9 @@ $BotSettings=[
     'enableGoodbye' => 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
     'enableLinkBlocking' => 1, // 1 - включить блокирование ссылок; 0 - выключить
     'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка VladimirGavSD
+    'enableWallets' => 1, // wallets
     'superUsersIds' => ['000','000'], // id пользователей с привилегиями
+    'waitMessage' => 'Запрос обрабатывается. Пожалуйста, подождите.', // Текст Пожалуйста, подождите
 ];
 
 // Подгружаем файл с индивидуальными настройками бота /telegrambot/backend/settings/bot_settings.json
@@ -195,6 +197,8 @@ if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
         exit;
     }
 
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
     // gpt-3.5-turbo
     $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $messageTextLower);
     if(!empty($ChatGPTAnswerData['error'])){
@@ -203,8 +207,10 @@ if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
 
     if(!empty($ChatGPTAnswerData['answer'])){
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ChatGPTAnswerData['answer'], '', $message_id);
-        exit;
     }
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    exit;
 }
 
 // АИ Рисуем картинку по запросу
@@ -237,6 +243,8 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
         exit;
     }
 
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
     // gpt-3.5-turbo
     $ImgData = \modules\openai\services\sOpenAI::instance()->getImg($api_gpt, $messageTextLower, '256x256');
     if(!empty($ImgData['error'])){
@@ -249,15 +257,16 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
         file_put_contents($fileName, file_get_contents($ImgData['url']));
 
         sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $messageTextLower, $message_id);
-        exit;
     }
 
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    exit;
 }
 
 // StableDiffusion Рисует картинку по запросу
 $messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/sd');
-if ($pos2 !== false && !empty($BotSettings['StableDiffusion'])) {
+if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $messageTextLower = str_replace('/sd', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
@@ -294,6 +303,7 @@ if ($pos2 !== false && !empty($BotSettings['StableDiffusion'])) {
         $n_prompt = $promptArr [1];
     }
 
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
     if(!empty($dataMessage['message']['photo'])){
         // Если генерация из изображения
 
@@ -315,6 +325,7 @@ if ($pos2 !== false && !empty($BotSettings['StableDiffusion'])) {
 
         $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getTxt2Img($model_id, $prompt, $n_prompt);
     }
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
 
 
     if(!empty($ImgData['error'])){
@@ -327,6 +338,35 @@ if ($pos2 !== false && !empty($BotSettings['StableDiffusion'])) {
     }
 
 }
+
+$messageTextLower = preg_replace('/(.*)(\/new_wallets@[^ ]*)(.*)/', '/new_wallets $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$pos2 = stripos($messageTextLower, '/new_wallets');
+if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
+    $messageTextLower = str_replace('/new_wallets', '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    $countWallets = 1;
+    if(!empty($messageTextLower)){
+        if((int)$messageTextLower>1){
+            $countWallets = (int)$messageTextLower;
+        }
+    }
+
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
+    $ListWallets = '<b>Ethereum wallets ('.$countWallets.'): </b>'.PHP_EOL.PHP_EOL;
+    for ($i = 1; $i <= $countWallets; $i++) {
+        $WalletData = \modules\crypto\services\sCrypto::instance()->createWallet();
+        $ListWallets .= '<b>Wallet '.$i.'</b>'.PHP_EOL;
+        $ListWallets .= '<b>Address:</b> '.$WalletData['address'].PHP_EOL;
+        $ListWallets .= '<b>PrivateKey:</b> '.$WalletData['privateKey'].PHP_EOL.PHP_EOL;
+    }
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ListWallets, '', $message_id);
+    exit;
+}
+// Men's wallets
 
 // Если не предусмотрен ответ
 //sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ не предусмотрен', '', $message_id);
