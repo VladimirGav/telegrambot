@@ -29,7 +29,7 @@ if(file_exists(_FILE_bot_settings_)){
     // Если индивидуальных настроек нет, то создадим их
     $dirSettings = dirname(_FILE_bot_settings_);
     if(!is_dir($dirSettings)) { mkdir($dirSettings, 0777, true); }
-    file_put_contents(_FILE_bot_settings_, json_encode($BotSettings));
+    file_put_contents(_FILE_bot_settings_, json_encode($BotSettings, JSON_PRETTY_PRINT));
 }
 
 /** Пример обработки сообщений телеграм бота */
