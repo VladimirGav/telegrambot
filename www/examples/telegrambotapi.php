@@ -76,6 +76,7 @@ if(!empty($dataMessage['message']['left_chat_member']['id']) && !empty($BotSetti
     sTelegram::instance()->removeMessage($bot_token, $dataMessage['message']['chat']['id'],  $dataMessage['message']['message_id']);
 }
 
+// Если бот, то игнорируем сообщение
 if(!empty($dataMessage['message']['from']['is_bot'])){
     echo json_encode(['error'=> 1, 'data' => 'is_bot']);
     exit;
@@ -101,9 +102,16 @@ $message_text = ''; // Текст сообщения
 if(!empty($dataMessage['message']['text'])){
     $message_text = $dataMessage['message']['text'];
 } else {
+    // Если подпись, то будет как текст
     if(!empty($dataMessage['message']['caption'])){
         $message_text = $dataMessage['message']['caption'];
     }
+}
+
+// Если это ответ на сообщение
+$reply_to_message_text = '';
+if(!empty($dataMessage['message']['reply_to_message']['text'])){
+    $reply_to_message_text = $dataMessage['message']['reply_to_message']['text'];
 }
 
 // Если ссылки запрещены, то удлаляем сообщение
@@ -176,8 +184,9 @@ if($messageTextLower=='пример кнопки'){
 
 // Пример chatGPT
 $messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$pos2 = stripos($messageTextLower, '/ai');
-if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
+$pos2 = stripos($messageTextLower, '/ai'); // Проверка /ai в тексте сообщения
+$pos3 = stripos($reply_to_message_text, '#ai_'); // Проверка в #ai_ при разговоре
+if (($pos2 !== false || $pos3 !== false) && !empty($BotSettings['enableChatGPT'])) {
     $messageTextLower = str_replace('/ai', '', $messageTextLower);
 
     // Если пустой, отправляем пример
@@ -199,14 +208,21 @@ if ($pos2 !== false && !empty($BotSettings['enableChatGPT'])) {
 
     $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
 
+    // Получим id истории сообщений, если пользователь отвечает боту.
+    $HistoryArr = explode('#ai_',$reply_to_message_text);
+    $historyMessagesId=0;
+    if(!empty($HistoryArr[1])){
+        $historyMessagesId = (int)(mb_substr($HistoryArr[1], 0, 10));
+    }
+
     // gpt-3.5-turbo
-    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $messageTextLower);
+    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $messageTextLower, $historyMessagesId);
     if(!empty($ChatGPTAnswerData['error'])){
         exit(json_encode($ChatGPTAnswerData));
     }
 
     if(!empty($ChatGPTAnswerData['answer'])){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ChatGPTAnswerData['answer'], '', $message_id);
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ChatGPTAnswerData['answer'].' #ai_'.$ChatGPTAnswerData['historyMessagesId'], '', $message_id);
     }
 
     sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage

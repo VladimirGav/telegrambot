@@ -24,24 +24,63 @@ class sOpenAI
         return self::$instance;
     }
 
+    public $historyMessagesDir = __DIR__.'/historyMessages';
 
-    public function getChatGPTAnswer($token, $Question, $model = 'gpt-3.5-turbo'){
+    public function getArrByFileJson($FileJsonPath){
+        $fileArr = [];
+        if(!file_exists($FileJsonPath)){
+            return $fileArr;
+        }
+        $fileArr = json_decode(file_get_contents($FileJsonPath), true);
+        return $fileArr;
+    }
+
+    public function saveArrInFileJson($FileJsonPath, $fileArr){
+        if(!file_exists(dirname($FileJsonPath))){
+            if (!mkdir(dirname($FileJsonPath), 0777, true)) {
+                return ['error' => 1, 'data' => 'Failed to create directories...historyMessages'];
+            }
+        }
+        if(file_put_contents($FileJsonPath, json_encode($fileArr, JSON_PRETTY_PRINT))){
+            return ['error' => 0, 'data' => 'Success'];
+        }
+        return ['error' => 1, 'data' => 'saveArrInFileJson Error'];
+    }
+
+
+    public function getChatGPTAnswer($token, $Question, $historyMessagesId=0, $model = 'gpt-3.5-turbo'){
+
+        if(empty($historyMessagesId)){
+            $historyMessagesId = time();
+        }
+
+        $historyMessagesFilePath = $this->historyMessagesDir.'/'.$historyMessagesId.'.json';
+
+        $MessagesArr=$this->getArrByFileJson($historyMessagesFilePath);
+        $MessagesArr[]=['role' => 'user', 'content' => $Question];
+        echo '<pre>';
+        print_r($MessagesArr);
+        echo '</pre>';
+        //exit;
+
         $client = \OpenAI::client($token);
 
         if($model=='gpt-3.5-turbo'){
             try {
                 $response = $client->chat()->create([
-                    'model' => 'gpt-3.5-turbo',
-                    'messages' => [
-                        ['role' => 'user', 'content' => $Question],
-                    ],
+                    'model' => 'gpt-3.5-turbo-0613',
+                    'messages' => $MessagesArr,
                 ]);
             } catch (\Exception $e) {
                 return ['error' => 1, 'data' => 'Exception: '.  $e->getMessage()];
             }
             $response->toArray();
             if(!empty($response['choices'][0]['message']['content'])){
-                return ['error' => 0, 'data' => 'Success', 'answer'=>$response['choices'][0]['message']['content'], 'response'=>$response];
+                $answerContent = $response['choices'][0]['message']['content'];
+                $MessagesArr[] = ['role'=>'assistant', 'content'=>$answerContent];
+                $this->saveArrInFileJson($historyMessagesFilePath, $MessagesArr);
+
+                return ['error' => 0, 'data' => 'Success', 'historyMessagesId' => $historyMessagesId, 'answer'=>$answerContent, 'response'=>$response];
             }
         }
 

@@ -2,3 +2,4 @@ modules/telegram/services/telegram-ids
 modules/stablediffusion/services/temp
 modules/crypto/services/temp
 settings
+modules/openai/services/historyMessages
