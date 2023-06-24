@@ -317,7 +317,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $sStableDiffusion->pathStableDiffusion = $BotSettings['pathStableDiffusion'];
 
     $exampleText = '';
-    $exampleText .= '/sd'.PHP_EOL;
+    $exampleText .= '/sd Example command!!!'.PHP_EOL;
     $exampleText .= 'model_id: Lykon/DreamShaper'.PHP_EOL;
     $exampleText .= 'img_width: 512'.PHP_EOL;
     $exampleText .= 'img_height: 768'.PHP_EOL;
@@ -406,6 +406,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
 
         // Если пустой, отправляем пример
         if(empty($prompt)){
+            sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
             sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
             exit;
         }
