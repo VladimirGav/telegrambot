@@ -298,6 +298,13 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
     exit;
 }
 
+$messageTextLower = preg_replace('/(.*)(\/sd_models@[^ ]*)(.*)/', '/sd_models $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$pos2 = stripos($messageTextLower, '/sd_models');
+if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Allowed Models:'.PHP_EOL.implode(PHP_EOL, $BotSettings['StableDiffusionAllowedModelsArr']), '', $message_id);
+    exit;
+}
+
 // StableDiffusion Рисует картинку по запросу
 $messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/sd');
@@ -320,12 +327,6 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $exampleText .= 'negative_prompt: disfigured, kitsch, ugly, oversaturated, grain'.PHP_EOL;
 
     $AllowedModelsArr=$BotSettings['StableDiffusionAllowedModelsArr'];
-
-    $MessageArr = explode(' ', $messageTextLower);
-    if(!empty($MessageArr[0]) && $MessageArr[0]=='models'){
-        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'models: '.implode(PHP_EOL, $AllowedModelsArr), '', $message_id);
-        exit;
-    }
 
     $dir = __DIR__.'/uploads/images';
     if(!file_exists($dir)){

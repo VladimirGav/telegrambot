@@ -10,6 +10,10 @@ OpenAI команды
 - `/ai` - задаем любой вопрос. Отвечает ИИ OpenAI ChatGPT. Отвечая на сообщения бота можно вести диалог. Видео https://www.youtube.com/watch?v=V5s8zEvGr08
 - `/img` - описание картинки. ИИ OpenAI рисует картинку в ответ. Видео https://youtu.be/km212I673hk
 
+Stable Diffusion команды
+- `/sd_models` - Получить список разрешенных моделей для бота от huggingface
+- `/sd` - Запрос на создание изображения
+
 Crypto команды
 - `/new_wallets 3` - Создать 3 Ethereum кошелька (Address, PrivateKey). Видео https://youtu.be/U2uyD85Ysfw
 
@@ -66,7 +70,7 @@ Crypto команды
 - `superUsersIds`: ['000','000'], // id пользователей с привилегиями
 - `AllowedChatIdArr`: [], // Массив чатов для которых работает данный бот. Пустотой массив - нет ограничений
 - `waitMessage`: 'Пожалуйста, подождите', // Текст Пожалуйста, подождите
-- `enableStableDiffusion`: 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
+- `enableStableDiffusion`: 1, // 1 Включить генерацию изображений через StableDiffusion, если установлена сборка stable-diffusion-vg
 - `pathStableDiffusion`: 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
 - `StableDiffusionAllowedModelsArr`: [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5: 'runwayml/stable-diffusion-v1-5'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
 
