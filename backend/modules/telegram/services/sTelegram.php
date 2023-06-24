@@ -149,6 +149,7 @@ class sTelegram
             $this->saveLastUpdateId($bot_token, $dataMessage['update_id']);
             $LatestMessage = $dataMessage;
         }
+        $this->saveUserLastMessage($bot_token, $LatestMessage);
         return $LatestMessage;
     }
 
@@ -182,7 +183,29 @@ class sTelegram
             $this->saveLastUpdateId($bot_token, $UpdatesDataArr[$nextid]['update_id']);
             $LatestMessage = $UpdatesDataArr[$nextid];
         }
+        $this->saveUserLastMessage($bot_token, $LatestMessage);
         return $LatestMessage;
+    }
+
+    public function saveUserLastMessage($bot_token, $dataMessage){
+        if(empty($dataMessage['message']['from']['id'])){
+            return ['error' => 1, 'data' => 'from_id is empty'];
+        }
+        $from_id = $dataMessage['message']['from']['id'];
+
+        $BotData = $this->getBotData($bot_token);
+        $dirData = __DIR__.'/temp/data/UsersLastMessage';
+        if (!file_exists($dirData)) {
+            mkdir($dirData, 0777, true);
+        }
+
+        $UserLastMessageData = [
+            'BotData'=>$BotData,
+            'dataMessage'=>$dataMessage
+        ];
+
+        file_put_contents($dirData.'/'.$from_id.'.json', json_encode($UserLastMessageData, JSON_PRETTY_PRINT));
+        return ['error' => 0, 'data' => 'Success'];
     }
 
     public function getLastUpdateId($bot_token){
@@ -213,12 +236,11 @@ class sTelegram
      * @param $bot_token
      * @throws \Telegram\Bot\Exceptions\TelegramSDKException
      */
-    public function getMe($bot_token){
+    public function getBotData($bot_token){
         $telegram = new \Telegram\Bot\Api($bot_token);
         $response = $telegram->getMe();
-        $botId = $response->getId();
-        $firstName = $response->getFirstName();
-        $username = $response->getUsername();
+        $response = $response->toArray();
+        return $response;
     }
 
     public function forwardMessage($bot_token, $chat_id, $from_chat_id, $message_id)

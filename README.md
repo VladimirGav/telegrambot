@@ -16,8 +16,7 @@ Crypto команды
 Другие команды
 - Любой запрос - Администратор может добавлять собственные ответы на запросы в файле [telegrambotapi.php](www/examples/telegrambotapi.php)
 - `/user_id` - отправляет id отправителя. Видео https://youtu.be/z0uIJ15FPWg
-
-`! Каждую из этих возможностей бота можно настроить индивидуально в файле /telegrambot/backend/settings/bot_settings.json , где 1 - вкл, 0 - выкл. Файл создается автоматически, после первого успешного запуска бота.`
+- `/chat_id` - отправляет id текущего чата. Видео скоро
 
 ## Создание бота в Telegram
 Видео инструкция https://youtu.be/OYy3Sq8wig0
@@ -55,6 +54,21 @@ Crypto команды
 ## Ключи API
 - Все ключи с API хранятся в папке /telegrambot/backend/settings , вы всегда можете их отредактировать.
 - OpenAI API KEY вы можете получить по ссылке https://platform.openai.com/account/api-keys
+
+## Персонализация (настроеки)
+Возможности бота можно настроить индивидуально в файле /telegrambot/backend/settings/bot_settings.json. Файл создается автоматически, после первого успешного запуска бота.
+- `enableChatGPT`: 1, // 1 - включить ChatGPT команду /ai; 0 - выключить
+- `enableOpenAiImg`: 1, // 1 - включить OpenAi Img команду /img; 0 - выключить
+- `enableWelcome`: 1, // 1 - включить приветствие новых участников; 0 - выключить
+- `enableGoodbye`: 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
+- `enableLinkBlocking`: 1, // 1 - включить блокирование ссылок; 0 - выключить
+- `enableWallets`: 1, // wallets
+- `superUsersIds`: ['000','000'], // id пользователей с привилегиями
+- `AllowedChatIdArr`: [], // Массив чатов для которых работает данный бот. Пустотой массив - нет ограничений
+- `waitMessage`: 'Пожалуйста, подождите', // Текст Пожалуйста, подождите
+- `enableStableDiffusion`: 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
+- `pathStableDiffusion`: 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
+- `StableDiffusionAllowedModelsArr`: [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5: 'runwayml/stable-diffusion-v1-5'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
 
 ### Описание файлов
 1. [backend/core/installComposer.php](backend/core/installComposer.php) - Класс для установки composer

@@ -17,11 +17,13 @@ $BotSettings=[
     'enableGoodbye' => 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
     'enableLinkBlocking' => 1, // 1 - включить блокирование ссылок; 0 - выключить
     'enableWallets' => 1, // wallets
+
     'superUsersIds' => ['000','000'], // id пользователей с привилегиями
+    'AllowedChatIdArr' => [], // Массив чатов для которых работает данный бот. Пустотой массив - нет ограничений
     'waitMessage' => 'Запрос обрабатывается. Пожалуйста, подождите.', // Текст Пожалуйста, подождите
 
-    'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка vladimirgav
-    'pathStableDiffusion' => 'C:/stablediffusion', // Путь к корню StableDiffusion
+    'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
+    'pathStableDiffusion' => 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
     'StableDiffusionAllowedModelsArr' => [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5' => 'runwayml/stable-diffusion-v1-5', 'DreamShaper' => 'Lykon/DreamShaper', 'NeverEnding-Dream' => 'Lykon/NeverEnding-Dream'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
 ];
 
@@ -35,10 +37,6 @@ if(file_exists(_FILE_bot_settings_)){
     file_put_contents(_FILE_bot_settings_, json_encode($BotSettings, JSON_PRETTY_PRINT));
 }
 
-// Подключаем нейросеть StableDiffusion
-$sStableDiffusion = new \modules\stablediffusion\services\sStableDiffusion();
-$sStableDiffusion->pathStableDiffusion = $BotSettings['pathStableDiffusion'];
-
 /** Пример обработки сообщений телеграм бота */
 
 use modules\telegram\services\sTelegram;
@@ -51,6 +49,7 @@ $bot_token = trim(file_get_contents(_FILE_bot_token_));
 
 // Подключаемся к апи
 $telegram = new \Telegram\Bot\Api($bot_token);
+//$BotData = sTelegram::instance()->getBotData($bot_token);
 
 /*$checkApi = sTelegram::instance()->checkApi($bot_token);
 if(!empty($checkApi['error'])){
@@ -121,6 +120,12 @@ if(!empty($dataMessage['message']['reply_to_message']['text'])){
     $reply_to_message_text = $dataMessage['message']['reply_to_message']['text'];
 }
 
+// Если указан массив чатов для работы, если супер юзер то игнорируем
+if(!empty($BotSettings['AllowedChatIdArr']) && !in_array($message_chat_id, $BotSettings['AllowedChatIdArr']) && !in_array($from_id, $BotSettings['superUsersIds'])){
+    //sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Доступ к боту запрещен, используйте бот в другом чате.', '', $message_id);
+    exit;
+}
+
 // Если ссылки запрещены, то удлаляем сообщение
 if(!empty($BotSettings['enableLinkBlocking'])){
     $AllowedMessages = sTelegram::instance()->checkAllowedMessages($dataMessage, ['mention', 'url'], $BotSettings['superUsersIds']);
@@ -140,6 +145,13 @@ $messageTextLower = trim($messageTextLower);
 $messageTextLower = preg_replace('/(.*)(\/user_id@[^ ]*)(.*)/', '/user_id $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 if($messageTextLower=='/user_id'){
     sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'User_id: '.$from_id, '', $message_id);
+    exit;
+}
+
+// Если узнаем $chat_id
+$messageTextLower = preg_replace('/(.*)(\/chat_id@[^ ]*)(.*)/', '/chat_id $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+if($messageTextLower=='/chat_id'){
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'chat_id: '.$message_chat_id, '', $message_id);
     exit;
 }
 
@@ -293,6 +305,10 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $messageTextLower = str_replace('/sd', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
+    // Подключаем нейросеть StableDiffusion
+    $sStableDiffusion = new \modules\stablediffusion\services\sStableDiffusion();
+    $sStableDiffusion->pathStableDiffusion = $BotSettings['pathStableDiffusion'];
+
     $exampleText = '';
     $exampleText .= '/sd'.PHP_EOL;
     $exampleText .= 'model_id: Lykon/DreamShaper'.PHP_EOL;
@@ -362,6 +378,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $negative_prompt = (!empty($prontData['negative_prompt']))?$prontData['negative_prompt']:'';
 
     $sdData=[];
+    $sdData['from_id'] = $from_id;
     $sdData['model_id']=$model_id;
     $sdData['img_width']=$img_width;
     $sdData['img_height']=$img_height;

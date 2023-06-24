@@ -58,10 +58,6 @@ class sOpenAI
 
         $MessagesArr=$this->getArrByFileJson($historyMessagesFilePath);
         $MessagesArr[]=['role' => 'user', 'content' => $Question];
-        echo '<pre>';
-        print_r($MessagesArr);
-        echo '</pre>';
-        //exit;
 
         $client = \OpenAI::client($token);
 

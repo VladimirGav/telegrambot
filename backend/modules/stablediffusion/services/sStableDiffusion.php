@@ -24,7 +24,7 @@ class sStableDiffusion
         return self::$instance;
     }
 
-    public $pathStableDiffusion = 'C:/stablediffusion';
+    public $pathStableDiffusion = 'D:/stable-diffusion-vg';
 
     public function getTxt2Img($sdData){
         $sdData['type']='txt2img';
@@ -40,6 +40,7 @@ class sStableDiffusion
 
     public function getSdImg($sdData){
         // Получаем данные
+        $from_id = (!empty($sdData['from_id']))?$sdData['from_id']:0;
         $type = (!empty($sdData['type']))?mb_strtolower($sdData['type']):'txt2img'; // txt2img, img2img
         $prompt = (!empty($sdData['prompt']))?$sdData['prompt']:'';
         $negative_prompt = (!empty($sdData['negative_prompt']))?$sdData['negative_prompt']:'';
@@ -86,6 +87,7 @@ class sStableDiffusion
         // Генерируем входные данные для SD
         $img_id=time();
         $inputDataArr = [];
+        $inputDataArr['from_id'] = $from_id;
         $inputDataArr['img_id'] = $img_id;
         $inputDataArr['imgs_count'] = $imgs_count;
         $inputDataArr['model_id'] = $model_id;
