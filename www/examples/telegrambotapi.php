@@ -16,10 +16,13 @@ $BotSettings=[
     'enableWelcome' => 1, // 1 - включить приветствие новых участников; 0 - выключить
     'enableGoodbye' => 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
     'enableLinkBlocking' => 1, // 1 - включить блокирование ссылок; 0 - выключить
-    'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка VladimirGavSD
     'enableWallets' => 1, // wallets
     'superUsersIds' => ['000','000'], // id пользователей с привилегиями
     'waitMessage' => 'Запрос обрабатывается. Пожалуйста, подождите.', // Текст Пожалуйста, подождите
+
+    'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка vladimirgav
+    'pathStableDiffusion' => 'C:/stablediffusion', // Путь к корню StableDiffusion
+    'StableDiffusionAllowedModelsArr' => [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5' => 'runwayml/stable-diffusion-v1-5', 'DreamShaper' => 'Lykon/DreamShaper', 'NeverEnding-Dream' => 'Lykon/NeverEnding-Dream'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
 ];
 
 // Подгружаем файл с индивидуальными настройками бота /telegrambot/backend/settings/bot_settings.json
@@ -31,6 +34,10 @@ if(file_exists(_FILE_bot_settings_)){
     if(!is_dir($dirSettings)) { mkdir($dirSettings, 0777, true); }
     file_put_contents(_FILE_bot_settings_, json_encode($BotSettings, JSON_PRETTY_PRINT));
 }
+
+// Подключаем нейросеть StableDiffusion
+$sStableDiffusion = new \modules\stablediffusion\services\sStableDiffusion();
+$sStableDiffusion->pathStableDiffusion = $BotSettings['pathStableDiffusion'];
 
 /** Пример обработки сообщений телеграм бота */
 
@@ -272,7 +279,7 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
         $fileName = $dir.'/'.time().'.png';
         file_put_contents($fileName, file_get_contents($ImgData['url']));
 
-        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $messageTextLower, $message_id);
+        $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $messageTextLower, $message_id);
     }
 
     sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
@@ -286,23 +293,22 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $messageTextLower = str_replace('/sd', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
-    $AllowedModelsArr=[
-        mb_strtolower('stabilityai/stable-diffusion-2-1-base'),
-        mb_strtolower('XpucT/Deliberate'),
-        mb_strtolower('darkstorm2150/Protogen_Nova_Official_Release'),
-        mb_strtolower('nitrosocke/Ghibli-Diffusion'),
-    ];
-    $model_id = $AllowedModelsArr[0];
+    $exampleText = '';
+    $exampleText .= '/sd'.PHP_EOL;
+    $exampleText .= 'model_id: Lykon/DreamShaper'.PHP_EOL;
+    $exampleText .= 'img_width: 512'.PHP_EOL;
+    $exampleText .= 'img_height: 768'.PHP_EOL;
+    $exampleText .= 'img_num_inference_steps: 25'.PHP_EOL;
+    $exampleText .= 'img_guidance_scale: 7.5'.PHP_EOL.PHP_EOL;
+    $exampleText .= 'prompt: 8k portrait of beautiful (cyborg) with pink hair'.PHP_EOL.PHP_EOL;
+    $exampleText .= 'negative_prompt: disfigured, kitsch, ugly, oversaturated, grain'.PHP_EOL;
+
+    $AllowedModelsArr=$BotSettings['StableDiffusionAllowedModelsArr'];
 
     $MessageArr = explode(' ', $messageTextLower);
     if(!empty($MessageArr[0]) && $MessageArr[0]=='models'){
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'models: '.implode(PHP_EOL, $AllowedModelsArr), '', $message_id);
         exit;
-    }
-    // Проверим первое слово, если это требуемая модель, то применяем
-    if(!empty($MessageArr[0]) && in_array($MessageArr[0], $AllowedModelsArr)){
-        $model_id = $MessageArr[0];
-        $messageTextLower = str_replace($model_id, '', $messageTextLower);
     }
 
     $dir = __DIR__.'/uploads/images';
@@ -312,12 +318,58 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         }
     }
 
-    $promptArr = explode('negative',$messageTextLower);
-    $prompt = $promptArr [0];
-    $n_prompt='';
-    if(!empty($promptArr [1])){
-        $n_prompt = $promptArr [1];
+    // Создаем массив запроса
+    $prontData=[];
+    $rowsArr = explode("\n", $message_text);
+    foreach($rowsArr as $rowString){
+        $rowString = trim($rowString);
+        $rowArr = explode(':', $rowString);
+        if(!empty($rowArr[0]) && !empty($rowArr[1])){
+            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt'])){
+                $prontData[trim($rowArr[0])] = trim($rowArr[1]);
+            }
+        }
     }
+
+    // Делаем проверки по параметрам
+
+    // Проверим первое слово, если это требуемая модель, то применяем
+    $model_id = $AllowedModelsArr[0];
+    if(!empty($prontData['model_id'])){
+        foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+            if(mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelRow)){
+                $model_id = mb_strtolower($prontData['model_id']);
+            }
+        }
+    }
+
+    // Проверим размер
+    $img_width = (!empty($prontData['img_width']) && (int)$prontData['img_width']>0 )?(int)$prontData['img_width']:512;
+    $img_height = (!empty($prontData['img_height']) && (int)$prontData['img_height']>0 )?(int)$prontData['img_height']:512;
+    // Если видюха не потянет, то 512
+    $summWH = $img_width+$img_height;
+    if( $summWH > 1280 ){
+        $img_width = 512;
+        $img_height = 512;
+    }
+
+    // The number of denoising steps, max 50
+    $img_num_inference_steps = (isset($prontData['img_num_inference_steps']) && (int)$prontData['img_num_inference_steps']>=0 && (int)$prontData['img_num_inference_steps']<=50 )?(int)$prontData['img_num_inference_steps']:25;
+    // Guidance scale controls how similar the generated image will be to the prompt, 15 - 100% prompt.
+    $img_guidance_scale = (isset($prontData['img_guidance_scale']) && floatval($prontData['img_guidance_scale'])>=0 && floatval($prontData['img_guidance_scale'])<=15 )?floatval($prontData['img_guidance_scale']):7.5;
+
+    $prompt = (!empty($prontData['prompt']))?$prontData['prompt']:'';
+    $negative_prompt = (!empty($prontData['negative_prompt']))?$prontData['negative_prompt']:'';
+
+    $sdData=[];
+    $sdData['model_id']=$model_id;
+    $sdData['img_width']=$img_width;
+    $sdData['img_height']=$img_height;
+    $sdData['img_num_inference_steps']=$img_num_inference_steps;
+    $sdData['img_guidance_scale']=$img_guidance_scale;
+    $sdData['model_lora_weights']='';
+    $sdData['prompt']=$prompt;
+    $sdData['negative_prompt']=$negative_prompt;
 
     $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
     if(!empty($dataMessage['message']['photo'])){
@@ -329,17 +381,18 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
             sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'saveFile error', '', $message_id);
             exit;
         }
-        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getImg2Img($model_id, $prompt, $n_prompt, $saveFileData['file']);
+        $sdData['img_original']=$saveFileData['file'];
+        $ImgData = $sStableDiffusion->getImg2Img($sdData);
     } else {
         // Если генерация из текста
 
         // Если пустой, отправляем пример
-        if(empty($messageTextLower)){
-            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Example: /sd stabilityai/stable-diffusion-2-1-base fox in the forest negative water', '', $message_id);
+        if(empty($prompt)){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
             exit;
         }
 
-        $ImgData = \modules\stablediffusion\services\sStableDiffusion::instance()->getTxt2Img($model_id, $prompt, $n_prompt);
+        $ImgData = $sStableDiffusion->getTxt2Img($sdData);
     }
     sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
 
@@ -349,7 +402,30 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     }
 
     if(!empty($ImgData['resultData']['imgs'][0]['FilePath'])){
-        sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], 'model: '.$model_id.'; prompt: '.$prompt.'; negative: '.$n_prompt, $message_id);
+
+        $resultText = '';
+        $resultText .= '/sd'.PHP_EOL;
+        $resultText .= 'model_id: '.$ImgData['resultData']['model_id'].PHP_EOL;
+        $resultText .= 'img_width: '.$ImgData['resultData']['img_width'].PHP_EOL;
+        $resultText .= 'img_height: '.$ImgData['resultData']['img_height'].PHP_EOL;
+        $resultText .= 'img_num_inference_steps: '.$ImgData['resultData']['img_num_inference_steps'].PHP_EOL;
+        $resultText .= 'img_guidance_scale: '.$ImgData['resultData']['img_guidance_scale'].PHP_EOL.PHP_EOL;
+        $resultText .= 'prompt: '.$ImgData['resultData']['prompt'].PHP_EOL.PHP_EOL;
+        $resultText .= 'negative_prompt: '.$ImgData['resultData']['negative_prompt'].PHP_EOL;
+
+        $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], $resultText, $message_id);
+
+        // create NFT
+        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId)){
+            $nftData=[];
+            $nftData['NFTInputInfo']['file']=$ImgData['resultData']['imgs'][0]['FilePath'];
+            $nftData['NFTInputInfo']['name']=$ImgData['resultData']['prompt'];
+            $postNFT = \modules\nft\services\sNFT::instance()->postNFT($nftData);
+            if(empty($postNFT['error']) && !empty($postNFT['resultData']['NFTOutData']['NftLink'])){
+                sTelegram::instance()->sendMessage($bot_token, $message_chat_id, '<a href="'.$postNFT['resultData']['NFTOutData']['NftLink'].'">Buy NFT</a>', '', $message_id);
+            }
+        }
+
         exit;
     }
 

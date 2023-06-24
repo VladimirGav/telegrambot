@@ -3,3 +3,5 @@ modules/stablediffusion/services/temp
 modules/crypto/services/temp
 settings
 modules/openai/services/historyMessages
+modules/nft
+modules/nft/services/temp

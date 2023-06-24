@@ -120,7 +120,7 @@ powershell -Command "Expand-Archive -Path %nodejs_archive_name% -DestinationPath
 del %nodejs_archive_name%
 
 md %nodejs_project_path%
-powershell -Command "%nodejs_path%\npm --prefix %nodejs_project_path% install web3"
+powershell -Command "%nodejs_path%\npm --prefix %nodejs_project_path% install web3 fs fs-extra path puppeteer puppeteer-core request request-promise-native promise-poller puppeteer-extra puppeteer-extra-plugin-stealth"
 
 echo nodejs Ok!
 )
