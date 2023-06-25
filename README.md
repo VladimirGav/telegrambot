@@ -59,6 +59,11 @@ Crypto команды
 - Все ключи с API хранятся в папке /telegrambot/backend/settings , вы всегда можете их отредактировать.
 - OpenAI API KEY вы можете получить по ссылке https://platform.openai.com/account/api-keys
 
+## Установка и подключение Stable Diffusion
+Видео инструкция 
+1. Выполните установку https://github.com/VladimirGav/stable-diffusion-vg Видео инструкция https://youtu.be/dUGForWid64
+2. Укажите путь к папке stable-diffusion-vg и список моделей в файле настроек Телеграм Бота.
+
 ## Персонализация (настроеки)
 Возможности бота можно настроить индивидуально в файле /telegrambot/backend/settings/bot_settings.json. Файл создается автоматически, после первого успешного запуска бота.
 - `enableChatGPT`: 1, // 1 - включить ChatGPT команду /ai; 0 - выключить

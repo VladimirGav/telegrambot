@@ -437,6 +437,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         // create NFT
         if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId)){
             $nftData=[];
+            $nftData['from_id']=$from_id;
             $nftData['NFTInputInfo']['file']=$ImgData['resultData']['imgs'][0]['FilePath'];
             $nftData['NFTInputInfo']['name']=$ImgData['resultData']['prompt'];
             $postNFT = \modules\nft\services\sNFT::instance()->postNFT($nftData);
