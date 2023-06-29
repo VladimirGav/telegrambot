@@ -25,6 +25,8 @@ $BotSettings=[
     'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
     'pathStableDiffusion' => 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
     'StableDiffusionAllowedModelsArr' => [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5' => 'runwayml/stable-diffusion-v1-5', 'DreamShaper' => 'Lykon/DreamShaper', 'NeverEnding-Dream' => 'Lykon/NeverEnding-Dream'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
+
+    'enableNFT' => 1, // 1 Включить NFT
 ];
 
 // Подгружаем файл с индивидуальными настройками бота /telegrambot/backend/settings/bot_settings.json
@@ -113,6 +115,7 @@ if(!empty($dataMessage['message']['text'])){
         $message_text = $dataMessage['message']['caption'];
     }
 }
+$message_text = htmlspecialchars($message_text);
 
 // Если это ответ на сообщение
 $reply_to_message_text = '';
@@ -251,6 +254,7 @@ if (($pos2 !== false || $pos3 !== false) && !empty($BotSettings['enableChatGPT']
 // АИ Рисуем картинку по запросу
 $messageTextLower = preg_replace('/(.*)(\/img@[^ ]*)(.*)/', '/img $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/img');
+
 if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
     $messageTextLower = str_replace('/img', '', $messageTextLower);
 
@@ -342,7 +346,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $rowString = trim($rowString);
         $rowArr = explode(':', $rowString);
         if(!empty($rowArr[0]) && !empty($rowArr[1])){
-            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt'])){
+            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt','nft'])){
                 $prontData[trim($rowArr[0])] = trim($rowArr[1]);
             }
         }
@@ -435,15 +439,8 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], $resultText, $message_id);
 
         // create NFT
-        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId)){
-            $nftData=[];
-            $nftData['from_id']=$from_id;
-            $nftData['NFTInputInfo']['file']=$ImgData['resultData']['imgs'][0]['FilePath'];
-            $nftData['NFTInputInfo']['name']=$ImgData['resultData']['prompt'];
-            $postNFT = \modules\nft\services\sNFT::instance()->postNFT($nftData);
-            if(empty($postNFT['error']) && !empty($postNFT['resultData']['NFTOutData']['NftLink'])){
-                sTelegram::instance()->sendMessage($bot_token, $message_chat_id, '<a href="'.$postNFT['resultData']['NFTOutData']['NftLink'].'">Buy NFT</a>', '', $message_id);
-            }
+        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && $prontData['nft']=='true'){
+            include __DIR__.'/nftapi.php';
         }
 
         exit;
