@@ -348,7 +348,8 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         if(!empty($rowArr[0]) && !empty($rowArr[1])){
             $rowArr[0] = mb_strtolower($rowArr[0]);
             if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt','nft','nft_attributes'])){
-                $prontData[trim($rowArr[0])] = trim($rowArr[1]);
+                $rowValue = str_replace(trim($rowArr[0]).":", "", $rowString);
+                $prontData[trim($rowArr[0])] = trim($rowValue);
             }
         }
     }
