@@ -347,7 +347,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $rowArr = explode(':', $rowString);
         if(!empty($rowArr[0]) && !empty($rowArr[1])){
             $rowArr[0] = mb_strtolower($rowArr[0]);
-            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt','nft','nft_attributes'])){
+            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','tags','prompt','negative_prompt','nft'])){
                 $rowValue = str_replace(trim($rowArr[0]).":", "", $rowString);
                 $prontData[trim($rowArr[0])] = trim($rowValue);
             }
@@ -435,6 +435,9 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $resultText .= 'img_height: '.$ImgData['resultData']['img_height'].PHP_EOL;
         $resultText .= 'img_num_inference_steps: '.$ImgData['resultData']['img_num_inference_steps'].PHP_EOL;
         $resultText .= 'img_guidance_scale: '.$ImgData['resultData']['img_guidance_scale'].PHP_EOL.PHP_EOL;
+        if(!empty($prontData['tags'])){
+            $resultText .= 'tags: '.$prontData['tags'].PHP_EOL.PHP_EOL;
+        }
         $resultText .= 'prompt: '.$ImgData['resultData']['prompt'].PHP_EOL.PHP_EOL;
         $resultText .= 'negative_prompt: '.$ImgData['resultData']['negative_prompt'].PHP_EOL;
 
