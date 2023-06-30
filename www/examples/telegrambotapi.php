@@ -346,7 +346,8 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $rowString = trim($rowString);
         $rowArr = explode(':', $rowString);
         if(!empty($rowArr[0]) && !empty($rowArr[1])){
-            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt','nft'])){
+            $rowArr[0] = mb_strtolower($rowArr[0]);
+            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','prompt','negative_prompt','nft','nft_attributes'])){
                 $prontData[trim($rowArr[0])] = trim($rowArr[1]);
             }
         }
@@ -354,7 +355,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
 
     // Делаем проверки по параметрам
 
-    // Проверим первое слово, если это требуемая модель, то применяем
+    // Если это требуемая модель, то применяем
     $model_id = $AllowedModelsArr[0];
     if(!empty($prontData['model_id'])){
         foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
@@ -439,7 +440,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], $resultText, $message_id);
 
         // create NFT
-        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && $prontData['nft']=='true'){
+        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && mb_strtolower($prontData['nft'])=='true'){
             include __DIR__.'/nftapi.php';
         }
 
