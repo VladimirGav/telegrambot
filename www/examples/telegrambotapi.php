@@ -434,10 +434,11 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $resultText .= 'img_width: '.$ImgData['resultData']['img_width'].PHP_EOL;
         $resultText .= 'img_height: '.$ImgData['resultData']['img_height'].PHP_EOL;
         $resultText .= 'img_num_inference_steps: '.$ImgData['resultData']['img_num_inference_steps'].PHP_EOL;
-        $resultText .= 'img_guidance_scale: '.$ImgData['resultData']['img_guidance_scale'].PHP_EOL.PHP_EOL;
+        $resultText .= 'img_guidance_scale: '.$ImgData['resultData']['img_guidance_scale'].PHP_EOL;
         if(!empty($prontData['tags'])){
-            $resultText .= 'tags: '.$prontData['tags'].PHP_EOL.PHP_EOL;
+            $resultText .= 'tags: '.$prontData['tags'].PHP_EOL;
         }
+        $resultText .= PHP_EOL;
         $resultText .= 'prompt: '.$ImgData['resultData']['prompt'].PHP_EOL.PHP_EOL;
         $resultText .= 'negative_prompt: '.$ImgData['resultData']['negative_prompt'].PHP_EOL;
 
