@@ -266,6 +266,7 @@ class sTelegram
         $dataMessage=[];
         $dataMessage['chat_id']=$chat_id;
         $dataMessage['photo']=$InputFile;
+        $caption = mb_substr( $caption, 0, 1024); // Max 1024
         if(!empty($caption)){ $dataMessage['caption']=$caption; }
         if(!empty($reply_to_message_id)){ $dataMessage['reply_to_message_id']=$reply_to_message_id; }
 
