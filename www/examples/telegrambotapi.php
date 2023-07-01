@@ -446,7 +446,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
 
         // create NFT
         if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && mb_strtolower($prontData['nft'])=='true'){
-            include __DIR__.'/nftapi.php';
+            \modules\nft\services\sNFT::instance()->addDataNFT(['ImgData' => $ImgData, 'MessageId' => $sendPhotoId['MessageId'], 'message_chat_id' => $message_chat_id, 'message_id' => $message_id, 'from_id' => $from_id]);
         }
 
         exit;
