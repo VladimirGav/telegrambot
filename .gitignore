@@ -2,6 +2,6 @@
 www/uploads
 www/examples/uploads
 www/examples/telegramsendtest.php
-www/examples/nftapi.php
+www/examples/updatenft.php
 forwindows/php
 forwindows/nodejs

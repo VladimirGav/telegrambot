@@ -43,9 +43,9 @@ class sStableDiffusion
         $from_id = (!empty($sdData['from_id']))?$sdData['from_id']:0;
         $type = (!empty($sdData['type']))?mb_strtolower($sdData['type']):'txt2img'; // txt2img, img2img
         $prompt = (!empty($sdData['prompt']))?$sdData['prompt']:'';
-        $prompt = mb_substr($prompt, 0, 320); // Max 320
+        //$prompt = mb_substr($prompt, 0, 320); // Max 320
         $negative_prompt = (!empty($sdData['negative_prompt']))?$sdData['negative_prompt']:'';
-        $negative_prompt = mb_substr($negative_prompt, 0, 320); // Max 320
+        //$negative_prompt = mb_substr($negative_prompt, 0, 320); // Max 320
         $model_id = (!empty($sdData['model_id']))?$sdData['model_id']:'stabilityai/stable-diffusion-2-1-base';
         $model_lora_weights = (!empty($sdData['model_lora_weights']))?$sdData['model_lora_weights']:'';
         $imgs_count = (!empty($sdData['imgs_count']))?$sdData['model_id']:1;
