@@ -326,8 +326,12 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $exampleText .= 'img_width: 512'.PHP_EOL;
     $exampleText .= 'img_height: 768'.PHP_EOL;
     $exampleText .= 'img_num_inference_steps: 25'.PHP_EOL;
-    $exampleText .= 'img_guidance_scale: 7.5'.PHP_EOL.PHP_EOL;
-    $exampleText .= 'prompt: 8k portrait of beautiful (cyborg) with pink hair'.PHP_EOL.PHP_EOL;
+    $exampleText .= 'img_guidance_scale: 7.5'.PHP_EOL;
+    $exampleText .= 'sampler: dpm++ sde karras'.PHP_EOL;
+    $exampleText .= 'tags: #example'.PHP_EOL;
+    $exampleText .= PHP_EOL.PHP_EOL;
+    $exampleText .= 'prompt: 8k portrait of beautiful (cyborg) with pink hair'.PHP_EOL;
+    $exampleText .= PHP_EOL.PHP_EOL;
     $exampleText .= 'negative_prompt: disfigured, kitsch, ugly, oversaturated, grain'.PHP_EOL;
 
     $AllowedModelsArr=$BotSettings['StableDiffusionAllowedModelsArr'];
@@ -347,7 +351,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $rowArr = explode(':', $rowString);
         if(!empty($rowArr[0]) && !empty($rowArr[1])){
             $rowArr[0] = mb_strtolower($rowArr[0]);
-            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale','tags','prompt','negative_prompt','nft'])){
+            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale', 'sampler', 'tags','prompt','negative_prompt','nft'])){
                 $rowValue = str_replace(trim($rowArr[0]).":", "", $rowString);
                 $prontData[trim($rowArr[0])] = trim($rowValue);
             }
@@ -380,6 +384,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $img_num_inference_steps = (isset($prontData['img_num_inference_steps']) && (int)$prontData['img_num_inference_steps']>=0 && (int)$prontData['img_num_inference_steps']<=50 )?(int)$prontData['img_num_inference_steps']:25;
     // Guidance scale controls how similar the generated image will be to the prompt, 15 - 100% prompt.
     $img_guidance_scale = (isset($prontData['img_guidance_scale']) && floatval($prontData['img_guidance_scale'])>=0 && floatval($prontData['img_guidance_scale'])<=15 )?floatval($prontData['img_guidance_scale']):7.5;
+    $sampler = (!empty($prontData['sampler']))?$prontData['sampler']:'';
 
     $prompt = (!empty($prontData['prompt']))?$prontData['prompt']:'';
     $negative_prompt = (!empty($prontData['negative_prompt']))?$prontData['negative_prompt']:'';
@@ -392,6 +397,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $sdData['img_num_inference_steps']=$img_num_inference_steps;
     $sdData['img_guidance_scale']=$img_guidance_scale;
     $sdData['model_lora_weights']='';
+    $sdData['sampler']=$sampler;
     $sdData['prompt']=$prompt;
     $sdData['negative_prompt']=$negative_prompt;
 
@@ -435,6 +441,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $resultText .= 'img_height: '.$ImgData['resultData']['img_height'].PHP_EOL;
         $resultText .= 'img_num_inference_steps: '.$ImgData['resultData']['img_num_inference_steps'].PHP_EOL;
         $resultText .= 'img_guidance_scale: '.$ImgData['resultData']['img_guidance_scale'].PHP_EOL;
+        $resultText .= 'sampler: '.$ImgData['resultData']['sampler'].PHP_EOL;
         if(!empty($prontData['tags'])){
             $resultText .= 'tags: '.$prontData['tags'].PHP_EOL;
         }

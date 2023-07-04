@@ -53,6 +53,7 @@ class sStableDiffusion
         $img_height = (!empty($sdData['img_height']) && (int)$sdData['img_height'] > 0)?$sdData['img_height']:512;
         $img_num_inference_steps = (isset($sdData['img_num_inference_steps']) && (int)$sdData['img_num_inference_steps'] >= 0 && (int)$sdData['img_num_inference_steps'] <= 50)?(int)$sdData['img_num_inference_steps']:25;
         $img_guidance_scale = (isset($sdData['img_guidance_scale']) && floatval($sdData['img_guidance_scale']) >= 0 && floatval($sdData['img_guidance_scale']) <= 15)?floatval($sdData['img_guidance_scale']):7.5;
+        $sampler = (!empty($sdData['sampler']))?$sdData['sampler']:'';
 
         // Проверим типы на доступность
         if(!in_array($type, ['txt2img', 'img2img'])){
@@ -98,6 +99,7 @@ class sStableDiffusion
         $inputDataArr['img_height'] = $img_height;
         $inputDataArr['img_num_inference_steps'] = $img_num_inference_steps;
         $inputDataArr['img_guidance_scale'] = $img_guidance_scale;
+        $inputDataArr['sampler'] = $sampler;
 
         $inputDataArr['prompt'] = $prompt;
         $inputDataArr['negative_prompt'] = $negative_prompt;
