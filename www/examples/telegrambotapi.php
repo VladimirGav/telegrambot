@@ -492,7 +492,64 @@ if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
     sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ListWallets, '', $message_id);
     exit;
 }
-// Men's wallets
+
+$messageTextLower = preg_replace('/(.*)(\/new_wallet@[^ ]*)(.*)/', '/new_wallet $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$pos2 = stripos($messageTextLower, '/new_wallet');
+if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
+    $messageTextLower = str_replace('/new_wallet', '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    $countWallet = 1;
+    if(!empty($messageTextLower)){
+        if((int)$messageTextLower>1){
+            $countWallet = (int)$messageTextLower;
+        }
+    }
+
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
+    $WalletsData = \modules\crypto\services\sCrypto::instance()->createSeedWallet($countWallet);
+
+    $ListWallets = '<b>Mnemonic Seed Phrases:</b> '.$WalletsData['seed'].''.PHP_EOL.PHP_EOL;
+
+    $ListWallets .= '<b>Ethereum Accounts ('.$countWallet.'): </b>'.PHP_EOL.PHP_EOL;
+
+    foreach ($WalletsData['accounts'] as $accountKey => $accountData){
+        $ListWallets .= '<b>Account '.($accountKey+1).'</b>'.PHP_EOL;
+        $ListWallets .= '<b>Address:</b> '.$accountData['address'].PHP_EOL;
+        $ListWallets .= '<b>PrivateKey:</b> '.$accountData['privateKey'].PHP_EOL.PHP_EOL;
+    }
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ListWallets, '', $message_id);
+    exit;
+}
+
+$messageTextLower = preg_replace('/(.*)(\/new_seed@[^ ]*)(.*)/', '/new_seed $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$pos2 = stripos($messageTextLower, '/new_seed');
+if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
+    $messageTextLower = str_replace('/new_seed', '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    $countSeed = 1;
+    if(!empty($messageTextLower)){
+        if((int)$messageTextLower>1){
+            $countSeed = (int)$messageTextLower;
+        }
+    }
+
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
+    $ListSeed = '<b>Mnemonic Seed Phrases ('.$countSeed.'): </b>'.PHP_EOL.PHP_EOL;
+    for ($i = 1; $i <= $countSeed; $i++) {
+        $SeedData = \modules\crypto\services\sCrypto::instance()->generateSeedPhrase();
+        $ListSeed .= '<b>'.$i.':</b> '.$SeedData['seed'].PHP_EOL;
+    }
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ListSeed, '', $message_id);
+    exit;
+}
 
 // Если не предусмотрен ответ
 //sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ не предусмотрен', '', $message_id);

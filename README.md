@@ -16,11 +16,12 @@ Stable Diffusion команды
 
 Crypto команды
 - `/new_wallets 3` - Создать 3 Ethereum кошелька (Address, PrivateKey). Видео https://youtu.be/U2uyD85Ysfw
+- `/new_seed 10` - Создать 10 Seed фраз из 12 слов (bip39). Видео СКОРО
 
 Другие команды
 - Любой запрос - Администратор может добавлять собственные ответы на запросы в файле [telegrambotapi.php](www/examples/telegrambotapi.php)
 - `/user_id` - отправляет id отправителя. Видео https://youtu.be/z0uIJ15FPWg
-- `/chat_id` - отправляет id текущего чата. Видео скоро
+- `/chat_id` - отправляет id текущего чата. Видео https://youtu.be/wykA-F4fQI0
 
 ## Создание бота в Telegram
 Видео инструкция https://youtu.be/OYy3Sq8wig0
