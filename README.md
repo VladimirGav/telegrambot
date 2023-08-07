@@ -16,7 +16,8 @@ Stable Diffusion команды
 
 Crypto команды
 - `/new_wallets 3` - Создать 3 Ethereum кошелька (Address, PrivateKey). Видео https://youtu.be/U2uyD85Ysfw
-- `/new_seed 10` - Создать 10 Seed фраз из 12 слов (bip39). Видео СКОРО
+- `/new_wallet 25` - Создать seed фразу из 12 слов (bip39) и к ней 25 Аккаунтов с адресами и приватными ключами. Видео СКОРО
+- `/new_seed 10` - Создать 10 Seed фраз из 12 слов (bip39). Видео https://youtu.be/ndNdZJOYiA4
 
 Другие команды
 - Любой запрос - Администратор может добавлять собственные ответы на запросы в файле [telegrambotapi.php](www/examples/telegrambotapi.php)
