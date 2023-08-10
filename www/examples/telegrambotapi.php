@@ -23,6 +23,7 @@ $BotSettings=[
     'waitMessage' => 'Запрос обрабатывается. Пожалуйста, подождите.', // Текст Пожалуйста, подождите
 
     'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
+    'SdNsfwChatIdArr' => [], // Массив чатов где разрешено nsfw для StableDiffusion
     'pathStableDiffusion' => 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
     'StableDiffusionAllowedModelsArr' => [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5' => 'runwayml/stable-diffusion-v1-5', 'DreamShaper' => 'Lykon/DreamShaper', 'NeverEnding-Dream' => 'Lykon/NeverEnding-Dream'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
 
@@ -393,8 +394,14 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     $prompt = (!empty($prontData['prompt']))?$prontData['prompt']:'';
     $negative_prompt = (!empty($prontData['negative_prompt']))?$prontData['negative_prompt']:'';
 
+    $nsfw = false;
+    if(!empty($BotSettings['SdNsfwChatIdArr']) && in_array($message_chat_id, $BotSettings['SdNsfwChatIdArr'])){
+        $nsfw = true;
+    }
+
     $sdData=[];
     $sdData['from_id'] = $from_id;
+    $sdData['nsfw'] = $nsfw;
     $sdData['model_id']=$model_id;
     $sdData['img_width']=$img_width;
     $sdData['img_height']=$img_height;
@@ -456,7 +463,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], $resultText, $message_id);
 
         // create NFT
-        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && mb_strtolower($prontData['nft'])=='true'){
+        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && mb_strtolower($prontData['nft'])=='true' && $nsfw == false){
             \modules\nft\services\sNFT::instance()->addDataNFT(['ImgData' => $ImgData, 'MessageId' => $sendPhotoId['MessageId'], 'message_chat_id' => $message_chat_id, 'message_id' => $message_id, 'from_id' => $from_id]);
         }
 

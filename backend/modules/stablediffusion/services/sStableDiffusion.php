@@ -41,6 +41,7 @@ class sStableDiffusion
     public function getSdImg($sdData){
         // Получаем данные
         $from_id = (!empty($sdData['from_id']))?$sdData['from_id']:0;
+        $nsfw = (!empty($sdData['nsfw']))?$sdData['nsfw']:false;
         $type = (!empty($sdData['type']))?mb_strtolower($sdData['type']):'txt2img'; // txt2img, img2img
         $prompt = (!empty($sdData['prompt']))?$sdData['prompt']:'';
         //$prompt = mb_substr($prompt, 0, 320); // Max 320
@@ -91,6 +92,7 @@ class sStableDiffusion
         $img_id=time();
         $inputDataArr = [];
         $inputDataArr['from_id'] = $from_id;
+        $inputDataArr['nsfw'] = $nsfw;
         $inputDataArr['img_id'] = $img_id;
         $inputDataArr['imgs_count'] = $imgs_count;
         $inputDataArr['model_id'] = $model_id;
