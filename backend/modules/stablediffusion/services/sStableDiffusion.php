@@ -49,7 +49,7 @@ class sStableDiffusion
         //$negative_prompt = mb_substr($negative_prompt, 0, 320); // Max 320
         $model_id = (!empty($sdData['model_id']))?$sdData['model_id']:'stabilityai/stable-diffusion-2-1-base';
         $model_lora_weights = (!empty($sdData['model_lora_weights']))?$sdData['model_lora_weights']:'';
-        $imgs_count = (!empty($sdData['imgs_count']))?$sdData['model_id']:1;
+        $imgs_count = (!empty($sdData['imgs_count']))?$sdData['imgs_count']:1;
         $img_width = (!empty($sdData['img_width']) && (int)$sdData['img_width'] > 0)?$sdData['img_width']:512;
         $img_height = (!empty($sdData['img_height']) && (int)$sdData['img_height'] > 0)?$sdData['img_height']:512;
         $img_num_inference_steps = (isset($sdData['img_num_inference_steps']) && (int)$sdData['img_num_inference_steps'] >= 0 && (int)$sdData['img_num_inference_steps'] <= 50)?(int)$sdData['img_num_inference_steps']:25;
