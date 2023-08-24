@@ -5,3 +5,6 @@ www/examples/telegramsendtest.php
 www/examples/updatenft.php
 forwindows/php
 forwindows/nodejs
+forwindows/mysql
+forwindows/StartMySql.bat
+forwindows/mysql-8.1.0-winx64.zip

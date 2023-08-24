@@ -28,6 +28,10 @@ $BotSettings=[
     'StableDiffusionAllowedModelsArr' => [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5' => 'runwayml/stable-diffusion-v1-5', 'DreamShaper' => 'Lykon/DreamShaper', 'NeverEnding-Dream' => 'Lykon/NeverEnding-Dream'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
 
     'enableNFT' => 1, // 1 Включить NFT
+
+    'enableAiAudio' => 1, // 1 Включить генерацию речи из текста
+    'pathAiAudio' => 'D:/ai-audio-vg', // Путь к корню text-to-audio-vg
+    'audioAllowedModelsArr' => [0=>'suno/bark-small'], // Массив моделей для audio
 ];
 
 // Подгружаем файл с индивидуальными настройками бота /telegrambot/backend/settings/bot_settings.json
@@ -466,6 +470,104 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && mb_strtolower($prontData['nft'])=='true' && $nsfw == false){
             \modules\nft\services\sNFT::instance()->addDataNFT(['ImgData' => $ImgData, 'MessageId' => $sendPhotoId['MessageId'], 'message_chat_id' => $message_chat_id, 'message_id' => $message_id, 'from_id' => $from_id]);
         }
+
+        exit;
+    }
+
+}
+
+// StableDiffusion Рисует картинку по запросу
+$messageTextLower = preg_replace('/(.*)(\/audio@[^ ]*)(.*)/', '/audio $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$pos2 = stripos($messageTextLower, '/audio');
+if ($pos2 !== false && !empty($BotSettings['enableAiAudio'])) {
+    $messageTextLower = str_replace('/audio', '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    // Подключаем нейросеть StableDiffusion
+    $sAiAudio = new \modules\aiaudio\services\sAiAudio();
+    $sAiAudio->pathAiAudio = $BotSettings['pathAiAudio'];
+
+    $exampleText = '';
+    $exampleText .= '/audio Example command!!!'.PHP_EOL;
+    $exampleText .= 'prompt: Hello, Welcome to our club.'.PHP_EOL;
+    $exampleText .= 'voice_preset: v2/en_speaker_0'.PHP_EOL;
+
+    $AllowedModelsArr=$BotSettings['audioAllowedModelsArr'];
+
+    $dir = __DIR__.'/uploads/audio';
+    if(!file_exists($dir)){
+        if (!mkdir($dir, 0777, true)) {
+            die('Не удалось создать директории...');
+        }
+    }
+
+    // Создаем массив запроса
+    $prontData=[];
+    $rowsArr = explode("\n", $message_text);
+    foreach($rowsArr as $rowString){
+        $rowString = trim($rowString);
+        $rowArr = explode(':', $rowString);
+        if(!empty($rowArr[0]) && !empty($rowArr[1])){
+            $rowArr[0] = mb_strtolower($rowArr[0]);
+            if(in_array(trim($rowArr[0]), ['voice_preset','prompt'])){
+                $rowValue = str_replace(trim($rowArr[0]).":", "", $rowString);
+                $prontData[trim($rowArr[0])] = trim($rowValue);
+            }
+        }
+    }
+    // Если 1 строка, то это и будет подсказка
+    if(count($rowsArr)==1 && !empty($messageTextLower)){
+        $prontData['prompt'] = $messageTextLower;
+    }
+
+    // Делаем проверки по параметрам
+
+    // Если это требуемая модель, то применяем
+    $model_id = $AllowedModelsArr[0];
+    if(!empty($prontData['model_id'])){
+        foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+            if(mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelRow)){
+                $model_id = mb_strtolower($AllowedModelRow);
+            }
+        }
+    }
+
+    $prompt = (!empty($prontData['prompt']))?$prontData['prompt']:'';
+    $voice_preset = (!empty($prontData['voice_preset']))?$prontData['voice_preset']:'';
+
+    $audioData=[];
+    $audioData['from_id'] = $from_id;
+    $audioData['model_id']=$model_id;
+    $audioData['prompt']=$prompt;
+    $audioData['voice_preset']=$voice_preset;
+
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
+    // Если генерация из текста
+
+    // Если пустой, отправляем пример
+    if(empty($prompt)){
+        sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
+        exit;
+    }
+
+    $AiAudioData = $sAiAudio->getTxt2Audio($audioData);
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+
+    if(!empty($AiAudioData['error'])){
+        exit(json_encode($AiAudioData));
+    }
+
+    if(!empty($AiAudioData['resultData']['files'][0]['FilePath'])){
+
+        $resultText = '';
+        $resultText .= '/audio'.PHP_EOL;
+        $resultText .= 'prompt: '.$AiAudioData['resultData']['prompt'].PHP_EOL;
+        $resultText .= 'voice_preset: '.$AiAudioData['resultData']['voice_preset'].PHP_EOL;
+
+        $sendPhotoId = sTelegram::instance()->sendAudio($bot_token, $message_chat_id, $AiAudioData['resultData']['files'][0]['FilePath'], $resultText, $message_id);
 
         exit;
     }

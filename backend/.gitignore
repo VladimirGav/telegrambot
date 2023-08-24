@@ -2,6 +2,7 @@ modules/telegram/services/telegram-ids
 modules/telegram/services/temp
 modules/stablediffusion/services/temp
 modules/crypto/services/temp
+modules/aiaudio/services/temp
 settings
 modules/openai/services/historyMessages
 modules/nft
