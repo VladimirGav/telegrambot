@@ -88,6 +88,8 @@ Crypto команды
 - `enableStableDiffusion`: 1, // 1 Включить генерацию изображений через StableDiffusion, если установлена сборка stable-diffusion-vg
 - `pathStableDiffusion`: 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
 - `StableDiffusionAllowedModelsArr`: [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5: 'runwayml/stable-diffusion-v1-5'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
+- `enableAiAudio`: 1, // 1 Включить генерацию речи из текста, если установлена сборка ai-audio-vg
+- `pathAiAudio`: 'D:/ai-audio-vg', // Путь к корню ai-audio-vg
 
 ### Описание файлов
 1. [backend/core/installComposer.php](backend/core/installComposer.php) - Класс для установки composer
