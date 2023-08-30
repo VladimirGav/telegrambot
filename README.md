@@ -71,7 +71,7 @@ Crypto команды
 
 ## Установка и подключение AI Audio
 Видео инструкция СКОРО
-1. Выполните установку https://github.com/VladimirGav/ai-audio-vg Видео инструкция СКОРО
+1. Выполните установку https://github.com/VladimirGav/ai-audio-vg Видео инструкция https://www.youtube.com/watch?v=AW3OFjy3elw
 2. Укажите путь к папке ai-audio-vg в файле настроек Телеграм Бота.
 
 ## Персонализация (настроеки)
