@@ -14,6 +14,9 @@ Stable Diffusion команды
 - `/sd_models` - Получить список разрешенных моделей для бота от huggingface
 - `/sd` - Запрос на создание изображения
 
+AI Audio команды
+- `/audio` - Запрос на генерацию речи(аудио) из текста
+
 Crypto команды
 - `/new_wallets 3` - Создать 3 Ethereum кошелька (Address, PrivateKey). Видео https://youtu.be/U2uyD85Ysfw
 - `/new_wallet 25` - Создать seed фразу из 12 слов (bip39) и к ней 25 Аккаунтов с адресами и приватными ключами. Видео СКОРО
@@ -62,9 +65,14 @@ Crypto команды
 - OpenAI API KEY вы можете получить по ссылке https://platform.openai.com/account/api-keys
 
 ## Установка и подключение Stable Diffusion
-Видео инструкция 
+Видео инструкция https://www.youtube.com/watch?v=2NRnSDJVjE4
 1. Выполните установку https://github.com/VladimirGav/stable-diffusion-vg Видео инструкция https://youtu.be/dUGForWid64
 2. Укажите путь к папке stable-diffusion-vg и список моделей в файле настроек Телеграм Бота.
+
+## Установка и подключение AI Audio
+Видео инструкция СКОРО
+1. Выполните установку https://github.com/VladimirGav/ai-audio-vg Видео инструкция СКОРО
+2. Укажите путь к папке ai-audio-vg в файле настроек Телеграм Бота.
 
 ## Персонализация (настроеки)
 Возможности бота можно настроить индивидуально в файле /telegrambot/backend/settings/bot_settings.json. Файл создается автоматически, после первого успешного запуска бота.
