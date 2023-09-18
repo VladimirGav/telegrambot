@@ -136,6 +136,9 @@ if(!empty($dataMessage['message']['text'])){
 $message_text = htmlspecialchars($message_text);
 
 // Если интерактив
+if(!empty($dataCallback['callback_query']['from']['id'])) {
+    $from_id = $dataCallback['callback_query']['from']['id'];
+}
 if(!empty($dataCallback['callback_query']['data'])) {
     $message_text = $dataCallback['callback_query']['data'];
 }
