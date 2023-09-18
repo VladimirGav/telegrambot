@@ -68,9 +68,22 @@ if(!empty($checkApi['error'])){
 if(!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1]=='console'){
     $removeWebhook = sTelegram::instance()->removeWebhook($bot_token); // Удаляем привязку к Telegram Webhook
     if(!empty($removeWebhook['error'])){ exit(json_encode($removeWebhook)); }
+    // TODO Может требуется очистка services\telegram-ids
     $dataMessage = sTelegram::instance()->getUpdatesLastMessage($bot_token);
 } else {
+    // TODO Надо протестировать callback
     $dataMessage = sTelegram::instance()->getWebhookLastMessage($bot_token);
+}
+
+// callback_query для интерактива
+$dataCallback = [];
+if(!empty($dataMessage['callback_query'])){
+    $dataCallback = $dataMessage;
+    $dataMessage = $dataCallback['callback_query'];
+    // Если ответил другой пользователь, то не обрабатываем
+    if($dataCallback['callback_query']['message']['reply_to_message']['from']['id'] != $dataCallback['callback_query']['from']['id']){
+        exit;
+    }
 }
 
 // Если новый участник, то удалим сообщение о вступлении и отправим приветствие
@@ -90,7 +103,7 @@ if(!empty($dataMessage['message']['left_chat_member']['id']) && !empty($BotSetti
 }
 
 // Если бот, то игнорируем сообщение
-if(!empty($dataMessage['message']['from']['is_bot'])){
+if(!empty($dataMessage['message']['from']['is_bot']) && empty($dataCallback)){
     echo json_encode(['error'=> 1, 'data' => 'is_bot']);
     exit;
 }
@@ -122,6 +135,11 @@ if(!empty($dataMessage['message']['text'])){
 }
 $message_text = htmlspecialchars($message_text);
 
+// Если интерактив
+if(!empty($dataCallback['callback_query']['data'])) {
+    $message_text = $dataCallback['callback_query']['data'];
+}
+
 // Если это ответ на сообщение
 $reply_to_message_text = '';
 if(!empty($dataMessage['message']['reply_to_message']['text'])){
@@ -145,12 +163,10 @@ if(!empty($BotSettings['enableLinkBlocking'])){
 }
 
 // К нижнему регистру
-$messageTextLower = mb_strtolower($message_text);
-$messageTextLower = str_replace('  ', ' ', $messageTextLower);
-$messageTextLower = trim($messageTextLower);
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->getMessageTextLower($message_text);
 
 // Если узнаем id пользователя
-$messageTextLower = preg_replace('/(.*)(\/user_id@[^ ]*)(.*)/', '/user_id $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($messageTextLower, 'user_id');
 if($messageTextLower=='/user_id'){
     sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'User_id: '.$from_id, '', $message_id);
     exit;
@@ -315,18 +331,20 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
 }
 
 // StableDiffusion Рисует картинку по запросу
-$messageTextLower = preg_replace('/(.*)(\/sd@[^ ]*)(.*)/', '/sd $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$pos2 = stripos($messageTextLower, '/sd');
-if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
-    $messageTextLower = str_replace('/sd', '', $messageTextLower);
-    $messageTextLower = trim($messageTextLower);
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'sd');
+if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableStableDiffusion'])) {
+    $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeCommand($messageTextLower);
 
     // Подключаем нейросеть StableDiffusion
     $sStableDiffusion = new \modules\stablediffusion\services\sStableDiffusion();
     $sStableDiffusion->pathStableDiffusion = $BotSettings['pathStableDiffusion'];
 
     $exampleText = '';
-    $exampleText .= '/sd Example command!!!'.PHP_EOL;
+    $exampleText .= '/sd beautiful (cyborg) with pink hair'.PHP_EOL;
+    $exampleText .= PHP_EOL;
+    $exampleText .= 'Примеры: 🔺 Простой запрос. 🔻 Продвинутый запрос:'.PHP_EOL;
+    $exampleText .= PHP_EOL;
+    $exampleText .= '/sd'.PHP_EOL;
     $exampleText .= 'model_id: Lykon/DreamShaper'.PHP_EOL;
     $exampleText .= 'img_width: 512'.PHP_EOL;
     $exampleText .= 'img_height: 768'.PHP_EOL;
@@ -348,40 +366,221 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         }
     }
 
-    // Создаем массив запроса
-    $prontData=[];
-    $rowsArr = explode("\n", $message_text);
-    foreach($rowsArr as $rowString){
-        $rowString = trim($rowString);
-        $rowArr = explode(':', $rowString);
-        if(!empty($rowArr[0]) && !empty($rowArr[1])){
-            $rowArr[0] = mb_strtolower($rowArr[0]);
-            if(in_array(trim($rowArr[0]), ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale', 'sampler', 'tags','prompt','negative_prompt','nft'])){
-                $rowValue = str_replace(trim($rowArr[0]).":", "", $rowString);
-                $prontData[trim($rowArr[0])] = trim($rowValue);
-            }
+    /*echo '<pre>';
+    print_r($dataCallback);
+    echo '</pre>';*/
+    //exit;
+
+    // Interactive Bot
+
+    $message_text_prompt = $message_text;
+
+    // Если это интерактивный, то берем текст из предыдущего сообщения
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['text'])){
+        $message_text_prompt = $dataCallback['callback_query']['message']['reply_to_message']['text'];
+    }
+
+    // Текст с ключами в массив с данными
+    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text_prompt, 'prompt', ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale', 'sampler', 'tags','prompt','negative_prompt','nft']);
+    $promptData=$PromptDataByMessage['promptData'];
+
+    // Если пустой, отправляем пример
+    if(empty($promptData['prompt'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
+        exit;
+    }
+
+    /*echo '<pre>';
+    print_r($promptData);
+    echo '</pre>';
+    exit;*/
+
+    $InteractiveArrData['TypeSelect'] = 'simple';
+
+    // Choice 1
+    if(empty($promptData['model_id'])){
+
+        $select_data = [];
+        foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+            $select_name = empty($AllowedModelKey)?$AllowedModelRow:$AllowedModelKey;
+            $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $select_name];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 2,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите модель для генерации изображения:',
+            'select_key' => 'model_id',
+            'select_data' => $select_data,
+        ];
+
+    }
+
+    // Choice 2
+    if(empty($promptData['width_height']) && ( empty($promptData['img_width']) && empty($promptData['img_height']) )){
+
+        $select_data = [];
+        foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+            $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $AllowedModelKey];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 3,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите размер изображения:',
+            'select_key' => 'width_height',
+            'select_data' => [
+                ['select_value' => '512x512', 'select_name' => '512x512'],
+                ['select_value' => '512x768', 'select_name' => '512x768'],
+                ['select_value' => '768x512', 'select_name' => '768x512'],
+            ]
+        ];
+
+    }
+
+    // Choice 3
+    if(empty($promptData['img_num_inference_steps'])){
+
+        $select_data = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $select_value = $i*5;
+            $select_data[] = ['select_value' => $select_value, 'select_name' => $select_value];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 3,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите количество шагов для шумоподавления:',
+            'select_key' => 'img_num_inference_steps',
+            'select_data' => $select_data,
+        ];
+
+    }
+
+    // Choice 4
+    if(empty($promptData['img_guidance_scale'])){
+        $select_data = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $select_value = 15/100*$i*10;
+            $select_percent = (int)($i*10);
+            $select_data[] = ['select_value' => $select_value, 'select_name' => $select_percent.'%'];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 3,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите насколько сгенерированное изображение будет похоже на подсказку:',
+            'select_key' => 'img_guidance_scale',
+            'select_data' => $select_data,
+        ];
+
+    }
+
+    // Choice 5
+    if(empty($promptData['sampler'])){
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 3,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите sampler:',
+            'select_key' => 'sampler',
+            'select_data' => [
+                ['select_value' => 'euler', 'select_name' => 'euler'],
+                ['select_value' => 'ddpm', 'select_name' => 'ddpm'],
+                ['select_value' => 'dpm++ sde', 'select_name' => 'dpm++ sde'],
+                ['select_value' => 'dpm++', 'select_name' => 'dpm++'],
+                ['select_value' => 'karras', 'select_name' => 'karras'],
+            ]
+        ];
+
+    }
+
+    // Choice 6
+    if(empty($promptData['negative_prompt'])){
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 2,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите набор негативных подсказок:',
+            'select_key' => 'negative_prompt',
+            'select_data' => [
+                ['select_value' => '', 'select_name' => 'Пропустить'],
+                ['select_value' => 'worst quality, normal quality, low quality, low res, blurry, text, watermark, logo, banner, extra digits, cropped, jpeg artifacts, signature, username, error, sketch ,duplicate, ugly, monochrome, horror, geometry, mutation, disgusting', 'select_name' => 'Часто используемые'],
+                ['select_value' => 'bad anatomy, bad hands, three hands, three legs, bad arms, missing legs, missing arms, poorly drawn face, bad face, fused face, cloned face, worst face, three crus, extra crus, fused crus, worst feet, three feet, fused feet, fused thigh, three thigh, fused thigh, extra thigh, worst thigh, missing fingers, extra fingers, ugly fingers, long fingers, horn, realistic photo, extra eyes, huge eyes, 2girl, amputation, disconnected limbs', 'select_name' => 'Для анимированного персонажа'],
+                ['select_value' => 'bad anatomy, bad hands, three hands, three legs, bad arms, missing legs, missing arms, poorly drawn face, bad face, fused face, cloned face, worst face, three crus, extra crus, fused crus, worst feet, three feet, fused feet, fused thigh, three thigh, fused thigh, extra thigh, worst thigh, missing fingers, extra fingers, ugly fingers, long fingers, horn, extra eyes, huge eyes, 2girl, amputation, disconnected limbs, cartoon, cg, 3d, unreal, animate', 'select_name' => 'Для реалистичного персонажа'],
+            ]
+        ];
+
+    }
+
+    //$InteractiveArrData = \modules\telegram\services\sInteractive::instance()->getExampleInteractiveArrData('simple');
+    $InteractiveKeysStr = '';
+    if(!empty($dataCallback['callback_query']['data'])){
+        $InteractiveKeysStr = explode(' ', $dataCallback['callback_query']['data'])[0];
+    }
+    $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive('/sd', $InteractiveArrData, $InteractiveKeysStr);
+
+    if(!empty($InteractiveResData['error'])){
+        print_r($InteractiveResData);
+        exit;
+    }
+    if(empty($InteractiveResData['outDataArr']['isFinish'])){
+        if(empty($InteractiveResData['outDataArr']['editMarkup'])){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $message_id);
+        } else {
+            sTelegram::instance()->editMessageText($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
+            //sTelegram::instance()->editMessageReplyMarkup($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], '', $InteractiveResData['outDataArr']['reply_markup']);
+        }
+        exit;
+    } else {
+        // isFinish
+        // delete interactive message
+        if(!empty($dataCallback['callback_query']['message']['message_id'])){
+            sTelegram::instance()->removeMessage($bot_token, $dataCallback['callback_query']['message']['chat']['id'],  $dataCallback['callback_query']['message']['message_id']); // remove
         }
     }
-    // Если 1 строка, то это и будет подсказка
-    if(count($rowsArr)==1 && !empty($messageTextLower)){
-        $prontData['prompt'] = $messageTextLower;
+    // change the message_id to the original
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['message_id'])){
+        $message_id = $dataCallback['callback_query']['message']['reply_to_message']['message_id'];
+    }
+    // change the message_id to the original
+    /*if(!empty($dataCallback['callback_query']['message']['message_thread_id'])){
+        $message_id = $dataCallback['callback_query']['message']['message_thread_id'];
+    }*/
+
+    // promptData add interactive data
+    if(!empty($promptData) && !empty($InteractiveResData['outDataArr']['arrKeysValues'])){
+        $promptData = array_merge($promptData, $InteractiveResData['outDataArr']['arrKeysValues']);
     }
 
     // Делаем проверки по параметрам
 
     // Если это требуемая модель, то применяем
     $model_id = $AllowedModelsArr[0];
-    if(!empty($prontData['model_id'])){
+    if(!empty($promptData['model_id'])){
         foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
-            if(mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelRow)){
+            if(mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelRow)){
                 $model_id = mb_strtolower($AllowedModelRow);
             }
         }
     }
 
     // Проверим размер
-    $img_width = (!empty($prontData['img_width']) && (int)$prontData['img_width']>0 )?(int)$prontData['img_width']:512;
-    $img_height = (!empty($prontData['img_height']) && (int)$prontData['img_height']>0 )?(int)$prontData['img_height']:512;
+    if(!empty($promptData['width_height'])){ // 512x768
+        $width_height = explode('x', $promptData['width_height']);
+        if(!empty($width_height[0]) && !empty($width_height[1])){
+            $promptData['img_width'] = $width_height[0];
+            $promptData['img_height'] = $width_height[1];
+        }
+    }
+    $img_width = (!empty($promptData['img_width']) && (int)$promptData['img_width']>0 )?(int)$promptData['img_width']:512;
+    $img_height = (!empty($promptData['img_height']) && (int)$promptData['img_height']>0 )?(int)$promptData['img_height']:512;
     // Если видюха не потянет, то 512
     $summWH = $img_width+$img_height;
     if( $summWH > 1280 ){
@@ -390,13 +589,13 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
     }
 
     // The number of denoising steps, max 50
-    $img_num_inference_steps = (isset($prontData['img_num_inference_steps']) && (int)$prontData['img_num_inference_steps']>=0 && (int)$prontData['img_num_inference_steps']<=50 )?(int)$prontData['img_num_inference_steps']:25;
+    $img_num_inference_steps = (isset($promptData['img_num_inference_steps']) && (int)$promptData['img_num_inference_steps']>=0 && (int)$promptData['img_num_inference_steps']<=50 )?(int)$promptData['img_num_inference_steps']:25;
     // Guidance scale controls how similar the generated image will be to the prompt, 15 - 100% prompt.
-    $img_guidance_scale = (isset($prontData['img_guidance_scale']) && floatval($prontData['img_guidance_scale'])>=0 && floatval($prontData['img_guidance_scale'])<=15 )?floatval($prontData['img_guidance_scale']):7.5;
-    $sampler = (!empty($prontData['sampler']))?$prontData['sampler']:'dpm++ sde karras';
+    $img_guidance_scale = (isset($promptData['img_guidance_scale']) && floatval($promptData['img_guidance_scale'])>=0 && floatval($promptData['img_guidance_scale'])<=15 )?floatval($promptData['img_guidance_scale']):7.5;
+    $sampler = (!empty($promptData['sampler']))?$promptData['sampler']:'dpm++ sde karras';
 
-    $prompt = (!empty($prontData['prompt']))?$prontData['prompt']:'';
-    $negative_prompt = (!empty($prontData['negative_prompt']))?$prontData['negative_prompt']:'';
+    $prompt = (!empty($promptData['prompt']))?$promptData['prompt']:'';
+    $negative_prompt = (!empty($promptData['negative_prompt']))?$promptData['negative_prompt']:'';
 
     $nsfw = false;
     if(!empty($BotSettings['SdNsfwChatIdArr']) && in_array($message_chat_id, $BotSettings['SdNsfwChatIdArr'])){
@@ -457,8 +656,8 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $resultText .= 'img_num_inference_steps: '.$ImgData['resultData']['img_num_inference_steps'].PHP_EOL;
         $resultText .= 'img_guidance_scale: '.$ImgData['resultData']['img_guidance_scale'].PHP_EOL;
         $resultText .= 'sampler: '.$ImgData['resultData']['sampler'].PHP_EOL;
-        if(!empty($prontData['tags'])){
-            $resultText .= 'tags: '.$prontData['tags'].PHP_EOL;
+        if(!empty($promptData['tags'])){
+            $resultText .= 'tags: '.$promptData['tags'].PHP_EOL;
         }
         $resultText .= PHP_EOL;
         $resultText .= 'prompt: '.$ImgData['resultData']['prompt'].PHP_EOL.PHP_EOL;
@@ -467,7 +666,7 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
         $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $ImgData['resultData']['imgs'][0]['FilePath'], $resultText, $message_id);
 
         // create NFT
-        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($prontData['nft']) && mb_strtolower($prontData['nft'])=='true' && $nsfw == false){
+        if(file_exists(__DIR__.'/../../backend/modules/nft/services/sNFT.php') && !empty($sendPhotoId) && !empty($BotSettings['enableNFT']) && !empty($BotSettings['enableNFT']) && !empty($promptData['nft']) && mb_strtolower($promptData['nft'])=='true' && $nsfw == false){
             \modules\nft\services\sNFT::instance()->addDataNFT(['ImgData' => $ImgData, 'MessageId' => $sendPhotoId['MessageId'], 'message_chat_id' => $message_chat_id, 'message_id' => $message_id, 'from_id' => $from_id]);
         }
 
@@ -501,39 +700,24 @@ if ($pos2 !== false && !empty($BotSettings['enableAiAudio'])) {
         }
     }
 
-    // Создаем массив запроса
-    $prontData=[];
-    $rowsArr = explode("\n", $message_text);
-    foreach($rowsArr as $rowString){
-        $rowString = trim($rowString);
-        $rowArr = explode(':', $rowString);
-        if(!empty($rowArr[0]) && !empty($rowArr[1])){
-            $rowArr[0] = mb_strtolower($rowArr[0]);
-            if(in_array(trim($rowArr[0]), ['voice_preset','prompt'])){
-                $rowValue = str_replace(trim($rowArr[0]).":", "", $rowString);
-                $prontData[trim($rowArr[0])] = trim($rowValue);
-            }
-        }
-    }
-    // Если 1 строка, то это и будет подсказка
-    if(count($rowsArr)==1 && !empty($messageTextLower)){
-        $prontData['prompt'] = $messageTextLower;
-    }
+    // Текст с ключами в массив с данными
+    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text, 'prompt', ['voice_preset','prompt']);
+    $promptData=$PromptDataByMessage['promptData'];
 
     // Делаем проверки по параметрам
 
     // Если это требуемая модель, то применяем
     $model_id = $AllowedModelsArr[0];
-    if(!empty($prontData['model_id'])){
+    if(!empty($promptData['model_id'])){
         foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
-            if(mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($prontData['model_id']) == mb_strtolower($AllowedModelRow)){
+            if(mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelRow)){
                 $model_id = mb_strtolower($AllowedModelRow);
             }
         }
     }
 
-    $prompt = (!empty($prontData['prompt']))?$prontData['prompt']:'';
-    $voice_preset = (!empty($prontData['voice_preset']))?$prontData['voice_preset']:'';
+    $prompt = (!empty($promptData['prompt']))?$promptData['prompt']:'';
+    $voice_preset = (!empty($promptData['voice_preset']))?$promptData['voice_preset']:'';
 
     $audioData=[];
     $audioData['from_id'] = $from_id;

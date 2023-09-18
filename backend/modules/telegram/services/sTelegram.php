@@ -61,7 +61,95 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendMessage($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
+    }
+
+    /**
+     * Редактировать ReplyMarkup
+     * @param $bot_token
+     * @param $chat_id
+     * @param $text
+     * @return array
+     * @throws \Telegram\Bot\Exceptions\TelegramSDKException
+     */
+    public function editMessageReplyMarkup($bot_token, $chat_id='', $message_id='', $inline_message_id='', $reply_markup=''){
+        $telegram = new \Telegram\Bot\Api($bot_token);
+        $dataMessage=[];
+        if(!empty($chat_id)){
+            $dataMessage['chat_id']=$chat_id;
+        }
+        if(!empty($message_id)){
+            $dataMessage['message_id']=$message_id;
+        }
+        if(!empty($inline_message_id)){
+            $dataMessage['inline_message_id']=$inline_message_id;
+        }
+        if(!empty($reply_markup)){
+            $dataMessage['reply_markup']=$reply_markup;
+        }
+        if(!empty($reply_to_message_id)){
+            $dataMessage['reply_to_message_id']=$reply_to_message_id;
+        }
+
+       /* echo '<pre>';
+        print_r($dataMessage);
+        echo '</pre>';*/
+
+        $getMessageId=0;
+        $error=0;
+        $dataText='';
+
+        try {
+            $sendMessageData = $telegram->editMessageReplyMarkup($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Success';
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+
+
+        return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
+    }
+
+    public function editMessageText($bot_token, $chat_id='', $message_id='', $text='', $reply_markup=''){
+        $telegram = new \Telegram\Bot\Api($bot_token);
+        $dataMessage=[];
+        if(!empty($chat_id)){
+            $dataMessage['chat_id']=$chat_id;
+        }
+        if(!empty($message_id)){
+            $dataMessage['message_id']=$message_id;
+        }
+        if(!empty($text)){
+            $dataMessage['text']=$text;
+        }
+        if(!empty($reply_markup)){
+            $dataMessage['reply_markup']=$reply_markup;
+        }
+        if(!empty($reply_to_message_id)){
+            $dataMessage['reply_to_message_id']=$reply_to_message_id;
+        }
+
+        /* echo '<pre>';
+         print_r($dataMessage);
+         echo '</pre>';*/
+
+        $getMessageId=0;
+        $error=0;
+        $dataText='';
+
+        try {
+            $sendMessageData = $telegram->editMessageText($dataMessage);
+            $getMessageId = $sendMessageData->getMessageId();
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
@@ -75,7 +163,7 @@ class sTelegram
     {
         $telegram = new \Telegram\Bot\Api($bot_token);
         $error=0;
-        $dataText = 'Успешно';
+        $dataText = 'Success';
 
         try {
             $deleteMessageData = $telegram->deleteMessage(['chat_id'=>$chat_id, 'message_id'=> $message_id]);
@@ -275,7 +363,7 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendPhoto($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
@@ -303,7 +391,7 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendAudio($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
@@ -331,7 +419,7 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendDocument($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
@@ -359,7 +447,7 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendVideo($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
@@ -387,7 +475,7 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendVoice($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
@@ -414,7 +502,7 @@ class sTelegram
         try {
             $sendMessageData = $telegram->sendSticker($dataMessage);
             $getMessageId = $sendMessageData->getMessageId();
-            $dataText = 'Успешно';
+            $dataText = 'Success';
         } catch (\Exception $e) {
             $dataText = 'Exception: '.  $e->getMessage();
             $error = 1;
