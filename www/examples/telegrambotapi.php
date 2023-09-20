@@ -678,10 +678,9 @@ if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableSt
 
 }
 
-// StableDiffusion Рисует картинку по запросу
-$messageTextLower = preg_replace('/(.*)(\/audio@[^ ]*)(.*)/', '/audio $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$pos2 = stripos($messageTextLower, '/audio');
-if ($pos2 !== false && !empty($BotSettings['enableAiAudio'])) {
+// AI Audio
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'audio');
+if (stripos($messageTextLower, '/audio') !== false && !empty($BotSettings['enableAiAudio'])) {
     $messageTextLower = str_replace('/audio', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
@@ -703,9 +702,143 @@ if ($pos2 !== false && !empty($BotSettings['enableAiAudio'])) {
         }
     }
 
+    // Interactive Bot
+
+    $message_text_prompt = $message_text;
+
+    // Если это интерактивный, то берем текст из предыдущего сообщения
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['text'])){
+        $message_text_prompt = $dataCallback['callback_query']['message']['reply_to_message']['text'];
+    }
+
     // Текст с ключами в массив с данными
-    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text, 'prompt', ['voice_preset','prompt']);
+    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text_prompt, 'prompt', ['voice_preset','prompt']);
     $promptData=$PromptDataByMessage['promptData'];
+
+    // Если пустой, отправляем пример
+    if(empty($promptData['prompt'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
+        exit;
+    }
+
+    /*echo '<pre>';
+    print_r($promptData);
+    echo '</pre>';
+    exit;*/
+
+    $InteractiveArrData['TypeSelect'] = 'simple';
+
+    // Choice 1
+    /*if(empty($promptData['model_id'])){
+
+        $select_data = [];
+        foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+            $select_name = empty($AllowedModelKey)?$AllowedModelRow:$AllowedModelKey;
+            $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $select_name];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 2,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Модель',
+            'select_text' => 'Выберите модель для генерации:',
+            'select_key' => 'model_id',
+            'select_data' => $select_data,
+        ];
+
+    }*/
+
+    // Choice 2
+    if(empty($promptData['language'])){
+
+        $select_data = [];
+        foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+            $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $AllowedModelKey];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 3,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Язык',
+            'select_text' => 'Выберите язык:',
+            'select_key' => 'language',
+            'select_data' => [
+                ['select_value' => 'en', 'select_name' => 'English'],
+                ['select_value' => 'de', 'select_name' => 'German'],
+                ['select_value' => 'es', 'select_name' => 'Spanish'],
+                ['select_value' => 'fr', 'select_name' => 'French'],
+                ['select_value' => 'hi', 'select_name' => 'Hindi'],
+                ['select_value' => 'it', 'select_name' => 'Italian'],
+                ['select_value' => 'ja', 'select_name' => 'Japanese'],
+                ['select_value' => 'ko', 'select_name' => 'Korean'],
+                ['select_value' => 'pl', 'select_name' => 'Polish'],
+                ['select_value' => 'pt', 'select_name' => 'Portuguese'],
+                ['select_value' => 'ru', 'select_name' => 'Russian'],
+                ['select_value' => 'tr', 'select_name' => 'Turkish'],
+                ['select_value' => 'zh', 'select_name' => 'Chinese, simplified'],
+            ]
+        ];
+
+    }
+
+    // Choice 3
+    if(empty($promptData['speaker'])){
+
+        $select_data = [];
+        for ($i = 0; $i <= 9; $i++) {
+            $select_data[] = ['select_value' => 'speaker_'.$i, 'select_name' => 'Speaker '.$i];
+        }
+
+        $InteractiveArrData['ElementsSelect'][] = [
+            'columns' => 3,
+            'select_value' => 'Value_Element_0',
+            'select_name' => 'Оператор',
+            'select_text' => 'Выберите оператора:',
+            'select_key' => 'speaker',
+            'select_data' => $select_data,
+        ];
+
+    }
+
+    //$InteractiveArrData = \modules\telegram\services\sInteractive::instance()->getExampleInteractiveArrData('simple');
+    $InteractiveKeysStr = '';
+    if(!empty($dataCallback['callback_query']['data'])){
+        $InteractiveKeysStr = explode(' ', $dataCallback['callback_query']['data'])[0];
+    }
+    $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive('/audio', $InteractiveArrData, $InteractiveKeysStr);
+
+    if(!empty($InteractiveResData['error'])){
+        print_r($InteractiveResData);
+        exit;
+    }
+    if(empty($InteractiveResData['outDataArr']['isFinish'])){
+        if(empty($InteractiveResData['outDataArr']['editMarkup'])){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $message_id);
+        } else {
+            sTelegram::instance()->editMessageText($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
+            //sTelegram::instance()->editMessageReplyMarkup($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], '', $InteractiveResData['outDataArr']['reply_markup']);
+        }
+        exit;
+    } else {
+        // isFinish
+        // delete interactive message
+        if(!empty($dataCallback['callback_query']['message']['message_id'])){
+            sTelegram::instance()->removeMessage($bot_token, $dataCallback['callback_query']['message']['chat']['id'],  $dataCallback['callback_query']['message']['message_id']); // remove
+        }
+    }
+    // change the message_id to the original
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['message_id'])){
+        $message_id = $dataCallback['callback_query']['message']['reply_to_message']['message_id'];
+    }
+    // change the message_id to the original
+    /*if(!empty($dataCallback['callback_query']['message']['message_thread_id'])){
+        $message_id = $dataCallback['callback_query']['message']['message_thread_id'];
+    }*/
+
+    // promptData add interactive data
+    if(!empty($promptData) && !empty($InteractiveResData['outDataArr']['arrKeysValues'])){
+        $promptData = array_merge($promptData, $InteractiveResData['outDataArr']['arrKeysValues']);
+    }
 
     // Делаем проверки по параметрам
 
@@ -721,6 +854,11 @@ if ($pos2 !== false && !empty($BotSettings['enableAiAudio'])) {
 
     $prompt = (!empty($promptData['prompt']))?$promptData['prompt']:'';
     $voice_preset = (!empty($promptData['voice_preset']))?$promptData['voice_preset']:'';
+
+    if(!empty($promptData['language']) && !empty($promptData['speaker'])){
+        $voice_preset = $promptData['language'].'_'.$promptData['speaker'];
+    }
+
 
     $audioData=[];
     $audioData['from_id'] = $from_id;
