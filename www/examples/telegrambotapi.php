@@ -700,9 +700,9 @@ if (stripos($messageTextLower, '/audio') !== false && !empty($BotSettings['enabl
     $sAiAudio->pathAiAudio = $BotSettings['pathAiAudio'];
 
     $exampleText = '';
-    $exampleText .= '/audio Example command!!!'.PHP_EOL;
-    $exampleText .= 'prompt: Hello, Welcome to our club.'.PHP_EOL;
-    $exampleText .= 'voice_preset: v2/en_speaker_0'.PHP_EOL;
+    $exampleText .= '/audio Example Text. Hello, welcome to Image Club'.PHP_EOL;
+    //$exampleText .= 'prompt: Hello, welcome to Image Club.'.PHP_EOL;
+    //$exampleText .= 'voice_preset: v2/en_speaker_0'.PHP_EOL;
 
     $AllowedModelsArr=$BotSettings['audioAllowedModelsArr'];
 
