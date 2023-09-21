@@ -387,6 +387,11 @@ if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableSt
     $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text_prompt, 'prompt', ['model_id','img_width','img_height','img_num_inference_steps','img_guidance_scale', 'sampler', 'tags','prompt','negative_prompt','nft']);
     $promptData=$PromptDataByMessage['promptData'];
 
+    if(!empty($promptData['prompt'])){
+        $promptData['prompt'] = strip_tags($promptData['prompt']);
+        $promptData['prompt'] = preg_replace("/[^A-Za-z0-9_ ->]/", '', $promptData['prompt']); //Supports English only
+    }
+
     // Если пустой, отправляем пример
     if(empty($promptData['prompt'])){
         sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
@@ -650,6 +655,12 @@ if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableSt
     }
 
     if(!empty($ImgData['resultData']['imgs'][0]['FilePath'])){
+
+        // If the picture is black
+        if(filesize($ImgData['resultData']['imgs'][0]['FilePath']) < 3000){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Потенциальное содержимое NSFW. Смотрите описание группы.', '', $message_id);
+            exit;
+        }
 
         $resultText = '';
         $resultText .= '/sd'.PHP_EOL;
