@@ -191,7 +191,7 @@ if($messageTextLower=='/start'){
 
 // Если пользователь напишет Тест, то выведем ответ
 if($messageTextLower=='тест'){
-    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ от бота на сообщение тест. <b>Вы можете предусмотреть свои ответы на любые сообщения в формате HTML.</b>', '', $message_id);
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'Ответ от бота на сообщение тест. <b>Вы можете предусмотреть свои ответы на любые сообщения в формате HTML.</b>', '');
     exit;
 }
 
