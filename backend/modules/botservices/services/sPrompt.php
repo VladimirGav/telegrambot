@@ -64,6 +64,9 @@ class sPrompt
     }
 
     public function removeBotName($message_text, $bot_command){
+        if (stripos($message_text, '@') === false) {
+            return $message_text;
+        }
         $message_text = $this->removeSpaces($message_text);
         $ArrWords = explode(' ', $message_text);
 

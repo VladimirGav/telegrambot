@@ -228,6 +228,48 @@ if($messageTextLower=='пример кнопки'){
     exit;
 }
 
+// Example of an interactive menu
+$CommandName = '/menu';
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, $CommandName);
+if (stripos($messageTextLower, $CommandName) !== false) {
+    $messageTextLower = str_replace($CommandName, '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    $InteractiveArrData = \modules\telegram\services\sInteractive::instance()->getExampleInteractiveArrData('simple'); // simple OR tree
+    $InteractiveKeysStr = '';
+    if(!empty($dataCallback['callback_query']['data'])){
+        $InteractiveKeysStr = explode(' ', $dataCallback['callback_query']['data'])[0];
+    }
+    $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive($CommandName, $InteractiveArrData, $InteractiveKeysStr);
+
+    if(!empty($InteractiveResData['error'])){
+        print_r($InteractiveResData);
+        exit;
+    }
+    if(empty($InteractiveResData['outDataArr']['isFinish'])){
+        if(empty($InteractiveResData['outDataArr']['editMarkup'])){
+            sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $message_id);
+        } else {
+            sTelegram::instance()->editMessageText($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
+            //sTelegram::instance()->editMessageReplyMarkup($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], '', $InteractiveResData['outDataArr']['reply_markup']);
+        }
+        exit;
+    } else {
+        // isFinish
+        // delete interactive message
+        if(!empty($dataCallback['callback_query']['message']['message_id'])){
+            sTelegram::instance()->removeMessage($bot_token, $dataCallback['callback_query']['message']['chat']['id'],  $dataCallback['callback_query']['message']['message_id']); // remove
+        }
+    }
+    // change the message_id to the original
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['message_id'])){
+        $message_id = $dataCallback['callback_query']['message']['reply_to_message']['message_id'];
+    }
+    // interactive data $InteractiveResData['outDataArr']['arrKeysValues']
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, json_encode($InteractiveResData['outDataArr']['arrKeysValues'],JSON_PRETTY_PRINT), '', $message_id);
+    exit;
+}
+
 // Пример chatGPT
 $messageTextLower = preg_replace('/(.*)(\/ai@[^ ]*)(.*)/', '/ai $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 $pos2 = stripos($messageTextLower, '/ai'); // Проверка /ai в тексте сообщения
@@ -910,9 +952,8 @@ if (stripos($messageTextLower, '/audio') !== false && !empty($BotSettings['enabl
 
 }
 
-$messageTextLower = preg_replace('/(.*)(\/new_wallets@[^ ]*)(.*)/', '/new_wallets $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$pos2 = stripos($messageTextLower, '/new_wallets');
-if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'new_wallets');
+if (stripos($messageTextLower, '/new_wallets') !== false && !empty($BotSettings['enableWallets'])) {
     $messageTextLower = str_replace('/new_wallets', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
@@ -938,9 +979,8 @@ if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
     exit;
 }
 
-$messageTextLower = preg_replace('/(.*)(\/new_wallet@[^ ]*)(.*)/', '/new_wallet $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$pos2 = stripos($messageTextLower, '/new_wallet');
-if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'new_wallet');
+if (stripos($messageTextLower, '/new_wallet') !== false && !empty($BotSettings['enableWallets'])) {
     $messageTextLower = str_replace('/new_wallet', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
@@ -970,10 +1010,34 @@ if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
     exit;
 }
 
-$messageTextLower = preg_replace('/(.*)(\/new_seed@[^ ]*)(.*)/', '/new_seed $1$3', $messageTextLower); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
-$pos2 = stripos($messageTextLower, '/new_seed');
-if ($pos2 !== false && !empty($BotSettings['enableWallets'])) {
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'new_seed');
+if (stripos($messageTextLower, '/new_seed') !== false && !empty($BotSettings['enableWallets'])) {
     $messageTextLower = str_replace('/new_seed', '', $messageTextLower);
+    $messageTextLower = trim($messageTextLower);
+
+    $countSeed = 1;
+    if(!empty($messageTextLower)){
+        if((int)$messageTextLower>1){
+            $countSeed = (int)$messageTextLower;
+        }
+    }
+
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
+    $ListSeed = '<b>Mnemonic Seed Phrases ('.$countSeed.'): </b>'.PHP_EOL.PHP_EOL;
+    for ($i = 1; $i <= $countSeed; $i++) {
+        $SeedData = \modules\crypto\services\sCrypto::instance()->generateSeedPhrase();
+        $ListSeed .= '<b>'.$i.':</b> '.$SeedData['seed'].PHP_EOL;
+    }
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ListSeed, '', $message_id);
+    exit;
+}
+
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'token');
+if (stripos($messageTextLower, '/token') !== false && !empty($BotSettings['enableWallets'])) {
+    $messageTextLower = str_replace('/token', '', $messageTextLower);
     $messageTextLower = trim($messageTextLower);
 
     $countSeed = 1;
