@@ -303,8 +303,8 @@ if (($pos2 !== false || $pos3 !== false) && !empty($BotSettings['enableChatGPT']
         $historyMessagesId = (int)(mb_substr($HistoryArr[1], 0, 10));
     }
 
-    // gpt-3.5-turbo
-    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $messageTextLower, $historyMessagesId);
+    $model_id = 'gpt-3.5-turbo';
+    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $messageTextLower, $historyMessagesId, $model_id);
     if(!empty($ChatGPTAnswerData['error'])){
         exit(json_encode($ChatGPTAnswerData));
     }
@@ -362,6 +362,175 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
         file_put_contents($fileName, file_get_contents($ImgData['url']));
 
         $sendPhotoId = sTelegram::instance()->sendPhoto($bot_token, $message_chat_id, $fileName, $messageTextLower, $message_id);
+    }
+
+    sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
+    exit;
+}
+
+// AI Gpt
+$messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'gpt');
+$BotSettings['enableAiGpt']=1;
+$pos3 = stripos($reply_to_message_text, '#gpt_'); // Проверка в #gpt_ при разговоре
+if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty($BotSettings['enableAiGpt'])) {
+    $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeCommand($messageTextLower);
+
+    $exampleText = '';
+    $exampleText .= '/gpt your question?'.PHP_EOL;
+    //$exampleText .= 'prompt: Hello.'.PHP_EOL;
+    //$exampleText .= 'model_id: gpt-4'.PHP_EOL;
+
+    $BotSettings['gptAllowedModelsArr']=['gpt-3.5-turbo', 'gpt-4'];
+    $AllowedModelsArr=$BotSettings['gptAllowedModelsArr'];
+
+    /*$dir = __DIR__.'/uploads/gpt';
+    if(!file_exists($dir)){
+        if (!mkdir($dir, 0777, true)) {
+            die('Не удалось создать директории...');
+        }
+    }*/
+
+    // Interactive Bot
+
+    $message_text_prompt = $message_text;
+
+    // Если это интерактивный, то берем текст из предыдущего сообщения
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['text'])){
+        $message_text_prompt = $dataCallback['callback_query']['message']['reply_to_message']['text'];
+    }
+
+    // Текст с ключами в массив с данными
+    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text_prompt, 'prompt', ['model_id','prompt']);
+    $promptData=$PromptDataByMessage['promptData'];
+
+    // Если пустой, отправляем пример
+    if(empty($promptData['prompt'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $exampleText, '', $message_id);
+        exit;
+    }
+
+    // Получим id истории сообщений, если пользователь отвечает боту.
+    $HistoryArr = explode('#gpt_',$reply_to_message_text);
+    $historyMessagesId=0;
+    if(!empty($HistoryArr[1])){
+        $historyMessagesId = (int)(mb_substr($HistoryArr[1], 0, 10));
+        $prompt = $promptData['prompt'];
+        $model_id = ''; // модель из истории будет
+    } else {
+
+        $InteractiveArrData['TypeSelect'] = 'simple';
+
+        // Choice 1
+        if(empty($promptData['model_id'])){
+
+            $select_data = [];
+            foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+                $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $AllowedModelKey];
+            }
+
+            $InteractiveArrData['ElementsSelect'][] = [
+                'columns' => 3,
+                'select_value' => 'Value_Element_0',
+                'select_name' => 'Model',
+                'select_text' => 'Select model:',
+                'select_key' => 'model_id',
+                'select_data' => [
+                    ['select_value' => 'gpt-3.5-turbo', 'select_name' => 'GPT-3.5 Turbo'],
+                    ['select_value' => 'gpt-4', 'select_name' => 'GPT-4'],
+                ]
+            ];
+
+        }
+
+        //$InteractiveArrData = \modules\telegram\services\sInteractive::instance()->getExampleInteractiveArrData('simple');
+        $InteractiveKeysStr = '';
+        if(!empty($dataCallback['callback_query']['data'])){
+            $InteractiveKeysStr = explode(' ', $dataCallback['callback_query']['data'])[0];
+        }
+        $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive('/gpt', $InteractiveArrData, $InteractiveKeysStr);
+
+        if(!empty($InteractiveResData['error'])){
+            print_r($InteractiveResData);
+            exit;
+        }
+        if(empty($InteractiveResData['outDataArr']['isFinish'])){
+            if(empty($InteractiveResData['outDataArr']['editMarkup'])){
+                sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $message_id);
+            } else {
+                sTelegram::instance()->editMessageText($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
+                //sTelegram::instance()->editMessageReplyMarkup($bot_token, $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], '', $InteractiveResData['outDataArr']['reply_markup']);
+            }
+            exit;
+        } else {
+            // isFinish
+            // delete interactive message
+            if(!empty($dataCallback['callback_query']['message']['message_id'])){
+                sTelegram::instance()->removeMessage($bot_token, $dataCallback['callback_query']['message']['chat']['id'],  $dataCallback['callback_query']['message']['message_id']); // remove
+            }
+        }
+        // change the message_id to the original
+        if(!empty($dataCallback['callback_query']['message']['reply_to_message']['message_id'])){
+            $message_id = $dataCallback['callback_query']['message']['reply_to_message']['message_id'];
+        }
+        // change the message_id to the original
+        /*if(!empty($dataCallback['callback_query']['message']['message_thread_id'])){
+            $message_id = $dataCallback['callback_query']['message']['message_thread_id'];
+        }*/
+
+        // promptData add interactive data
+        if(!empty($promptData) && !empty($InteractiveResData['outDataArr']['arrKeysValues'])){
+            $promptData = array_merge($promptData, $InteractiveResData['outDataArr']['arrKeysValues']);
+        }
+
+        // Делаем проверки по параметрам
+
+        // Если это требуемая модель, то применяем
+        $model_id = $AllowedModelsArr[0];
+        if(!empty($promptData['model_id'])){
+            foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
+                if(mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelRow)){
+                    $model_id = mb_strtolower($AllowedModelRow);
+                }
+            }
+        }
+
+        $prompt = (!empty($promptData['prompt']))?$promptData['prompt']:'';
+        $model_id = (!empty($promptData['model_id']))?$promptData['model_id']:'';
+
+    }
+
+    // Получим токен бота из файла
+    if(!file_exists(_FILE_api_gpt_)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'OpenAI API KEY is empty', '', $message_id);
+        exit;
+    }
+    $api_gpt = trim(file_get_contents(_FILE_api_gpt_));
+    if(empty($api_gpt)){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, 'OpenAI API KEY is empty', '', $message_id);
+        exit;
+    }
+
+    $waitMessageData = sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['waitMessage'], '', $message_id); // show waitMessage
+
+    // Получим id истории сообщений, если пользователь отвечает боту.
+    /*$HistoryArr = explode('#gpt_',$reply_to_message_text);
+    $historyMessagesId=0;
+    if(!empty($HistoryArr[1])){
+        $historyMessagesId = (int)(mb_substr($HistoryArr[1], 0, 10));
+        $prompt = '';
+        $model_id = '';
+    } else {
+
+    }*/
+
+    // gpt
+    $ChatGPTAnswerData = \modules\openai\services\sOpenAI::instance()->getChatGPTAnswer($api_gpt, $prompt, $historyMessagesId, $model_id);
+    if(!empty($ChatGPTAnswerData['error'])){
+        exit(json_encode($ChatGPTAnswerData));
+    }
+
+    if(!empty($ChatGPTAnswerData['answer'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $ChatGPTAnswerData['answer'].' #gpt_'.$ChatGPTAnswerData['historyMessagesId'], '', $message_id);
     }
 
     sTelegram::instance()->removeMessage($bot_token, $message_chat_id,  $waitMessageData['MessageId']); // remove waitMessage
@@ -734,8 +903,7 @@ if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableSt
 // AI Audio
 $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'audio');
 if (stripos($messageTextLower, '/audio') !== false && !empty($BotSettings['enableAiAudio'])) {
-    $messageTextLower = str_replace('/audio', '', $messageTextLower);
-    $messageTextLower = trim($messageTextLower);
+    $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeCommand($messageTextLower);
 
     // Подключаем нейросеть StableDiffusion
     $sAiAudio = new \modules\aiaudio\services\sAiAudio();
