@@ -436,7 +436,7 @@ if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty
                 'select_key' => 'model_id',
                 'select_data' => [
                     ['select_value' => 'gpt-3.5-turbo', 'select_name' => 'GPT-3.5 Turbo'],
-                    ['select_value' => 'gpt-4', 'select_name' => 'GPT-4'],
+                    ['select_value' => 'gpt-4-1106-preview', 'select_name' => 'GPT-4 Turbo'],
                 ]
             ];
 
