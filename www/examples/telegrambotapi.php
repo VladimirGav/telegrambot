@@ -13,6 +13,10 @@ require_once __DIR__.'/../../backend/defines.php';
 $BotSettings=[
     'enableChatGPT' => 1, // 1 - включить ChatGPT команду /ai; 0 - выключить
     'enableOpenAiImg' => 1, // 1 - включить OpenAi Img команду /img; 0 - выключить
+
+    'enableGPT' => 1, // 1 - включить ChatGPT команду /gpt; 0 - выключить
+    'gptAllowedModelsArr' => ['gpt-4'=>'GPT-4', 'gpt-4-1106-preview'=>'GPT-4 Turbo', 'gpt-3.5-turbo'=>'GPT-3.5 Turbo'], // Массив моделей для gpt
+
     'enableWelcome' => 1, // 1 - включить приветствие новых участников; 0 - выключить
     'enableGoodbye' => 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
     'enableLinkBlocking' => 1, // 1 - включить блокирование ссылок; 0 - выключить
@@ -370,9 +374,8 @@ if ($pos2 !== false && !empty($BotSettings['enableOpenAiImg'])) {
 
 // AI Gpt
 $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'gpt');
-$BotSettings['enableAiGpt']=1;
 $pos3 = stripos($reply_to_message_text, '#gpt_'); // Проверка в #gpt_ при разговоре
-if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty($BotSettings['enableAiGpt'])) {
+if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty($BotSettings['enableGPT'])) {
     $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeCommand($messageTextLower);
 
     $exampleText = '';
@@ -380,7 +383,6 @@ if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty
     //$exampleText .= 'prompt: Hello.'.PHP_EOL;
     //$exampleText .= 'model_id: gpt-4'.PHP_EOL;
 
-    $BotSettings['gptAllowedModelsArr']=['gpt-3.5-turbo', 'gpt-4'];
     $AllowedModelsArr=$BotSettings['gptAllowedModelsArr'];
 
     /*$dir = __DIR__.'/uploads/gpt';
@@ -425,7 +427,7 @@ if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty
 
             $select_data = [];
             foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
-                $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $AllowedModelKey];
+                $select_data[] = ['select_value' => $AllowedModelKey, 'select_name' => $AllowedModelRow];
             }
 
             $InteractiveArrData['ElementsSelect'][] = [
@@ -434,10 +436,7 @@ if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty
                 'select_name' => 'Model',
                 'select_text' => 'Select model:',
                 'select_key' => 'model_id',
-                'select_data' => [
-                    ['select_value' => 'gpt-3.5-turbo', 'select_name' => 'GPT-3.5 Turbo'],
-                    ['select_value' => 'gpt-4-1106-preview', 'select_name' => 'GPT-4 Turbo'],
-                ]
+                'select_data' => $select_data,
             ];
 
         }

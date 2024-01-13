@@ -88,6 +88,8 @@ Example of an interactive menu
 ## Персонализация (настроеки)
 Возможности бота можно настроить индивидуально в файле /telegrambot/backend/settings/bot_settings.json. Файл создается автоматически, после первого успешного запуска бота.
 - `enableChatGPT`: 1, // 1 - включить ChatGPT команду /ai; 0 - выключить
+- `enableGPT`: 1, // 1 - включить ChatGPT команду /gpt; 0 - выключить
+- `gptAllowedModelsArr`: ['gpt-4'=>'GPT-4', 'gpt-4-1106-preview'=>'GPT-4 Turbo', 'gpt-3.5-turbo'=>'GPT-3.5 Turbo'], // Массив моделей для gpt
 - `enableOpenAiImg`: 1, // 1 - включить OpenAi Img команду /img; 0 - выключить
 - `enableWelcome`: 1, // 1 - включить приветствие новых участников; 0 - выключить
 - `enableGoodbye`: 1, // 1 - включить удаление уведомления о выходе участника из группы; 0 - выключить
