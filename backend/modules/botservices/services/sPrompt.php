@@ -71,9 +71,13 @@ class sPrompt
         $ArrWords = explode(' ', $message_text);
 
         // We delete the bot name, for example we replace /ai@Name_bot -> /ai
-        $ArrWords[0] = preg_replace('/(.*)(\/'.$bot_command.'@[^ ]*)(.*)/', '/'.$bot_command.' $1$3', mb_strtolower($ArrWords[0]));
+        //$ArrWords[0] = preg_replace('/(.*)(\/'.$bot_command.'@[^ ]*)(.*)/', '/'.$bot_command.' $1$3', mb_strtolower($ArrWords[0]));
+        //$ArrWords[0] = preg_replace('/(.*)(\/'.$bot_command.'\@[^ ]*)(.*)/', '/'.$bot_command.' $1$3', mb_strtolower($ArrWords[0]));
+        $ArrWords[0] = preg_replace('#(.*)(/' . $bot_command . '\@[^ ]*)(.*)#', '/' . $bot_command . ' $1$3', mb_strtolower($ArrWords[0]));
 
         $message_text_new = implode(' ', $ArrWords);
+
+        $message_text_new = $this->removeSpaces($message_text_new);
 
         return $message_text_new;
     }

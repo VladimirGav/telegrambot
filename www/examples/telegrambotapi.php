@@ -484,7 +484,7 @@ if ((stripos($messageTextLower, '/gpt') !== false || $pos3 !== false ) && !empty
         // Делаем проверки по параметрам
 
         // Если это требуемая модель, то применяем
-        $model_id = $AllowedModelsArr[0];
+        $model_id = reset($AllowedModelsArr);
         if(!empty($promptData['model_id'])){
             foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
                 if(mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelRow)){
