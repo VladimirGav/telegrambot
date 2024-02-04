@@ -26,6 +26,9 @@ $BotSettings=[
     'AllowedChatIdArr' => [], // Массив чатов для которых работает данный бот. Пустотой массив - нет ограничений
     'waitMessage' => 'Запрос обрабатывается. Пожалуйста, подождите.', // Текст Пожалуйста, подождите
 
+    'enableGPU' => 1, // 1, 0
+    'textGPU' => 'The GPU is resting. Please try again later.',
+
     'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
     'SdNsfwChatIdArr' => [], // Массив чатов где разрешено nsfw для StableDiffusion
     'pathStableDiffusion' => 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
@@ -546,6 +549,12 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
 // StableDiffusion Рисует картинку по запросу
 $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'sd');
 if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableStableDiffusion'])) {
+
+    if(empty($BotSettings['enableGPU'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['textGPU'], '', $message_id);
+        exit;
+    }
+
     $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeCommand($messageTextLower);
 
     // Подключаем нейросеть StableDiffusion
@@ -902,6 +911,12 @@ if (stripos($messageTextLower, '/sd') !== false && !empty($BotSettings['enableSt
 // AI Audio
 $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeBotName($message_text, 'audio');
 if (stripos($messageTextLower, '/audio') !== false && !empty($BotSettings['enableAiAudio'])) {
+
+    if(empty($BotSettings['enableGPU'])){
+        sTelegram::instance()->sendMessage($bot_token, $message_chat_id, $BotSettings['textGPU'], '', $message_id);
+        exit;
+    }
+
     $messageTextLower = \modules\botservices\services\sPrompt::instance()->removeCommand($messageTextLower);
 
     // Подключаем нейросеть StableDiffusion

@@ -98,6 +98,9 @@ Example of an interactive menu
 - `superUsersIds`: ['000','000'], // id пользователей с привилегиями
 - `AllowedChatIdArr`: [], // Массив чатов для которых работает данный бот. Пустотой массив - нет ограничений
 - `waitMessage`: 'Пожалуйста, подождите', // Текст Пожалуйста, подождите
+- `enableGPU`: 1, // 0 - Отключить `/sd` , `/audio`
+- `textGPU`: 'The GPU is resting. Please try again later.', // Отправлять текст, когда GPU отключен
+- `waitMessage`: 'Пожалуйста, подождите', // Текст Пожалуйста, подождите
 - `enableStableDiffusion`: 1, // 1 Включить генерацию изображений через StableDiffusion, если установлена сборка stable-diffusion-vg
 - `pathStableDiffusion`: 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
 - `StableDiffusionAllowedModelsArr`: [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5: 'runwayml/stable-diffusion-v1-5'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
