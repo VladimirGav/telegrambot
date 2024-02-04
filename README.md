@@ -98,7 +98,7 @@ Example of an interactive menu
 - `superUsersIds`: ['000','000'], // id пользователей с привилегиями
 - `AllowedChatIdArr`: [], // Массив чатов для которых работает данный бот. Пустотой массив - нет ограничений
 - `waitMessage`: 'Пожалуйста, подождите', // Текст Пожалуйста, подождите
-- `enableGPU`: 1, // 0 - Отключить `/sd` , `/audio`
+- `enableGPU`: 1, // 0 - Отключить `/sd` , `/audio` [YouTube](https://youtu.be/VQAiZFrTMo0)
 - `textGPU`: 'The GPU is resting. Please try again later.', // Отправлять текст, когда GPU отключен
 - `waitMessage`: 'Пожалуйста, подождите', // Текст Пожалуйста, подождите
 - `enableStableDiffusion`: 1, // 1 Включить генерацию изображений через StableDiffusion, если установлена сборка stable-diffusion-vg
