@@ -27,7 +27,7 @@ use modules\telegram\services\sTelegram;
     <p>Если все в порядке приходит токен бота примерно такой "7345887:AAElClcpnLz8fGX2vEEaa"</p>
 <form method="post">
     <p>Введите токен</p>
-    <input name="bot_token" type="text" placeholder="7345887:AAElClcpnLz8fGX2vEEaa" value="">
+    <input name="bot_token" type="password" placeholder="7345887:AAElClcpnLz8fGX2vEEaa" value="">
 
     <p>Введите url api бота, требуется с https</p>
     <input name="website_url" type="text" value="<?= _HOME_URL_ ?>/examples/telegrambotapi.php">
@@ -37,7 +37,7 @@ use modules\telegram\services\sTelegram;
         /ai - любой вопрос. Отвечает ChatGPT<br>
         /img - описание картинки. - нейросеть ChatGPT рисует картинку<br>
     </code>
-    <input name="api_gpt" type="text" value="">
+    <input name="api_gpt" type="password" value="">
 
     <!--<p>Stable Diffusion. <a target="_blank" href="https://beta.dreamstudio.ai/account">API KEY DreamStudio's</a> (по желанию). Будут работать команды:</p>
     <code>
