@@ -54,22 +54,24 @@ echo !api_gpt_str!>%file_api_gpt%
 )
 
 REM Install winget Git.Git
-winget list --id Git.Git >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-	echo Git Ok!
-) else (
-	echo Install winget Git.Git
-	winget install --id Git.Git -e --source winget
-)
+REM winget list --id Git.Git >nul 2>&1
+REM if %ERRORLEVEL% EQU 0 (
+REM 	echo Git Ok!
+REM ) else (
+REM 	echo Install winget Git.Git
+REM 	winget install --id Git.Git -e --source winget
+REM )
+winget install --id Git.Git -e --source winget
 
 REM Install Microsoft Visual C++ Redistributable for Visual Studio
-winget list --id Microsoft.VCRedist.2015+.x64 >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-	echo Microsoft Visual C++ Redistributable for Visual Studio Ok!
-) else (
-	echo Install Microsoft Visual C++ Redistributable for Visual Studio
-	winget install Microsoft.VCRedist.2015+.x64
-)
+REM winget list --id Microsoft.VCRedist.2015+.x64 >nul 2>&1
+REM if %ERRORLEVEL% EQU 0 (
+REM 	echo Microsoft Visual C++ Redistributable for Visual Studio Ok!
+REM ) else (
+REM 	echo Install Microsoft Visual C++ Redistributable for Visual Studio
+REM 	winget install Microsoft.VCRedist.2015+.x64
+REM )
+winget install Microsoft.VCRedist.2015+.x64
 
 REM if there is no php, then install it
 if exist "%php_path%" (
