@@ -3,8 +3,26 @@ www/uploads
 www/examples/uploads
 www/examples/telegramsendtest.php
 www/examples/updatenft.php
+
 forwindows/php
 forwindows/nodejs
 forwindows/mysql
-forwindows/StartMySql.bat
 forwindows/mysql-8.1.0-winx64.zip
+forwindows/%nodejs_project_path%
+
+backend/settings
+
+# Ext
+
+forwindows/StartMySql.bat
+forwindows/dapp.bat
+
+backend/modules/crypto/nodejs/sWeb3.js
+backend/modules/crypto/nodejs/tokenInfo.js
+backend/modules/crypto/nodejs/tut.txt
+backend/modules/crypto/nodejs/abi
+backend/modules/crypto/services/sTokenInfo.php
+
+backend/modules/nft
+backend/modules/dapp
+backend/modules/nodejs
