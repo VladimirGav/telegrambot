@@ -641,10 +641,10 @@ class sTelegram
             if($messageType=='reply_to_message' && !empty($dataMessage['message']['reply_to_message'])){
                 $messageRow = $dataMessage['message']['reply_to_message'];
             }
-            echo '<pre>';
+            /*echo '<pre>';
             echo $mime_type;
             print_r($messageRow);
-            echo '<pre>';
+            echo '<pre>';*/
             if($mime_type=='audio'){
                 foreach (['voice','document','audio'] as $typeDoc){
                     if(!empty($messageRow[$typeDoc]['mime_type']) && strpos($messageRow[$typeDoc]['mime_type'], $mime_type) !== false){
