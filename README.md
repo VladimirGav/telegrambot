@@ -17,6 +17,10 @@ Stable Diffusion команды
 
 AI Audio команды
 - `/audio` - Запрос на генерацию речи(аудио) из текста
+- `/read` - Запрос на генерацию речи любым голосом
+
+AI Video
+- `/fake` - Запрос на генерацию DeepFake
 
 Crypto команды
 - `/new_wallets 3` - Создать 3 Ethereum кошелька (Address, PrivateKey). Видео https://youtu.be/U2uyD85Ysfw
@@ -27,6 +31,7 @@ Crypto команды
 - Любой запрос - Администратор может добавлять собственные ответы на запросы в файле [telegrambotapi.php](www/examples/telegrambotapi.php)
 - `/user_id` - отправляет id отправителя. Видео https://youtu.be/z0uIJ15FPWg
 - `/chat_id` - отправляет id текущего чата. Видео https://youtu.be/wykA-F4fQI0
+- `/thread_id` - отправляет id текущей темы чата.
 
 Примеры для разработчиков
 - `/start` - Пример отправки текстового сообщения на старт бота

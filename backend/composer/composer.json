@@ -12,6 +12,7 @@
     },
     "require": {
       "irazasyed/telegram-bot-sdk": "*",
-      "openai-php/client": "*"
+      "openai-php/client": "*",
+	  "james-heinrich/getid3": "*"
   }
 }

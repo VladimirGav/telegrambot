@@ -16,6 +16,7 @@ $BotSettings=[
     'enableOpenAiImg' => 1, // 1 - включить OpenAi Img команду /img; 0 - выключить
 
     'enableGPT' => 1, // 1 - включить ChatGPT команду /gpt; 0 - выключить
+    'gptNoCmmandsChatIdArr' => ['000_0'], // Массив чатов_тем ['message_chat_id_message_thread_id', '123_0'] в которых эта комада выполняется каждого текста. Пустотой массив - только по команде
     'gptAllowedModelsArr' => ['gpt-4'=>'GPT-4', 'gpt-4-1106-preview'=>'GPT-4 Turbo', 'gpt-3.5-turbo'=>'GPT-3.5 Turbo'], // Массив моделей для gpt
 
     'enableWelcome' => 1, // 1 - включить приветствие новых участников; 0 - выключить
@@ -31,6 +32,7 @@ $BotSettings=[
     'textGPU' => 'The GPU is resting. Please try again later.',
 
     'enableStableDiffusion' => 1, // 1 Включить генерацию изображений через StableDiffusion если установлена сборка stable-diffusion-vg
+    'SdNoCmmandsChatIdArr' => ['000_0'], // Массив чатов_тем ['message_chat_id_message_thread_id', '123_0'] в которых эта комада выполняется каждого текста. Пустотой массив - только по команде
     'SdNsfwChatIdArr' => [], // Массив чатов где разрешено nsfw для StableDiffusion
     'pathStableDiffusion' => 'D:/stable-diffusion-vg', // Путь к корню StableDiffusion
     'StableDiffusionAllowedModelsArr' => [0=>'stabilityai/stable-diffusion-2-1', 'SD1.5' => 'runwayml/stable-diffusion-v1-5', 'DreamShaper' => 'Lykon/DreamShaper', 'NeverEnding-Dream' => 'Lykon/NeverEnding-Dream'], // Массив моделей для StableDiffusion которые будут работать с huggingface.co
@@ -40,6 +42,16 @@ $BotSettings=[
     'enableAiAudio' => 1, // 1 Включить генерацию речи из текста
     'pathAiAudio' => 'D:/ai-audio-vg', // Путь к корню text-to-audio-vg
     'audioAllowedModelsArr' => [0=>'suno/bark-small'], // Массив моделей для audio
+
+    'enableAiSpeech' => 1, // 1 Включить генерацию речи из текста
+    'SpeechNoCmmandsChatIdArr' => ['000_0'], // Массив чатов_тем ['message_chat_id_message_thread_id', '123_0'] в которых эта комада выполняется каждого текста. Пустотой массив - только по команде
+    'pathAiSpeech' => 'D:/ai-vladimir-gav', // Путь к корню text-to aivg
+    'speechAllowedModelsArr' => [0=>'en', 1=>'ru'], // Массив моделей для aivg
+
+    'enableAiFake' => 1, // 1 Включить генерацию речи из текста
+    'FakeNoCmmandsChatIdArr' => ['000_0'], // Массив чатов_тем ['message_chat_id_message_thread_id', '123_0'] в которых эта комада выполняется каждого текста. Пустотой массив - только по команде
+    'pathAiFake' => 'D:/ai-vladimir-gav', // Путь к корню text-to aivg
+    'fakeAllowedModelsArr' => [0=>'0'], // Массив моделей для aivg
 ];
 
 // Подгружаем файл с индивидуальными настройками бота /telegrambot/backend/settings/bot_settings.json
@@ -157,6 +169,11 @@ if(!empty($dataMessage['message']['reply_to_message']['text'])){
     $reply_to_message_text = $dataMessage['message']['reply_to_message']['text'];
 }
 
+$message_thread_id = 0;
+if(!empty($dataMessage['message']['message_thread_id'])){
+    $message_thread_id = $dataMessage['message']['message_thread_id'];
+}
+
 // К нижнему регистру
 $messageTextLower = \modules\botservices\services\sPrompt::instance()->getMessageTextLower($message_text);
 
@@ -167,6 +184,7 @@ $tgData['message_id'] = $message_id;
 $tgData['message_text'] = $message_text;
 $tgData['messageTextLower'] = $messageTextLower;
 $tgData['message_chat_id'] = $message_chat_id;
+$tgData['message_thread_id'] = $message_thread_id;
 $tgData['reply_to_message_text'] = $reply_to_message_text;
 $tgData['bot_token'] = $bot_token;
 
@@ -197,6 +215,13 @@ if($tgData['messageTextLower']=='/user_id'){
 $tgData['messageTextLower'] = preg_replace('/(.*)(\/chat_id@[^ ]*)(.*)/', '/chat_id $1$3', $tgData['messageTextLower']); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
 if($tgData['messageTextLower']=='/chat_id'){
     \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], 'chat_id: '.$tgData['message_chat_id'], '', $tgData['message_id']);
+    exit;
+}
+
+// Если узнаем $message_thread_id
+$tgData['messageTextLower'] = preg_replace('/(.*)(\/thread_id@[^ ]*)(.*)/', '/thread_id $1$3', $tgData['messageTextLower']); // Удаляем имя бота, например заменяеам /ai@Name_bot на /ai
+if($tgData['messageTextLower']=='/thread_id'){
+    \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], 'thread_id: '.$tgData['message_thread_id'], '', $tgData['message_id']);
     exit;
 }
 

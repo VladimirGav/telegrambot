@@ -22,6 +22,7 @@ backend/modules/crypto/nodejs/tokenInfo.js
 backend/modules/crypto/nodejs/tut.txt
 backend/modules/crypto/nodejs/abi
 backend/modules/crypto/services/sTokenInfo.php
+backend/modules/aivg/services/temp
 
 backend/modules/nft
 backend/modules/dapp

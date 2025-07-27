@@ -43,10 +43,18 @@ class sPrompt
             }
         }
 
-        // If there is 1 row, then this will be the keyFirstRow
-        if(count($rowsArr)==1 && !empty($message_text)){
-            $promptData[$keyFirstRow] = $message_text;
+        // If other parameters are not found, then we will write the entire text into the key prompt.
+        if(empty($promptData) && !empty($message_text)){
+            $prompt = strip_tags($message_text);
+            $prompt = str_replace(["\r", "\n"], ' ', $prompt);
+            $promptData[$keyFirstRow] = $prompt;
         }
+
+        /*if(empty($promptData['prompt'])){
+            $promptData['prompt'] = strip_tags($tgData['messageTextLower']);
+            $promptData['prompt'] = str_replace(["\r", "\n"], ' ', $promptData['prompt']);
+            print_r($promptData);
+        }*/
 
         return ['error' => 0, 'data' => 'Success', 'rowsArr'=>$rowsArr, 'promptData'=> $promptData];
     }
@@ -103,5 +111,9 @@ class sPrompt
         //$message_text = str_replace('/'.$bot_command, '', $message_text);
         //$message_text = $this->removeSpaces($message_text);
         //return $message_text;
+    }
+
+    public function isEnglishText($text) {
+        return preg_match('/^[\x00-\x7F]+$/', $text); // ASCII only
     }
 }

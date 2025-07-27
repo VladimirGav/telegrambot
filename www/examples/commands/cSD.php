@@ -8,8 +8,15 @@ if ($pos2 !== false && !empty($BotSettings['enableStableDiffusion'])) {
 }
 
 // StableDiffusion Рисует картинку по запросу
-$tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeBotName($tgData['message_text'], 'sd');
-if (stripos($tgData['messageTextLower'], '/sd') !== false && !empty($BotSettings['enableStableDiffusion'])) {
+$aCmmand = 'sd';
+$NoCmmandsChatIdArr = $BotSettings['SdNoCmmandsChatIdArr'];
+$aEnable = $BotSettings['enableStableDiffusion'];
+$tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeBotName($tgData['message_text'], $aCmmand);
+if (
+    (stripos($tgData['messageTextLower'], '/'.$aCmmand) !== false || (!empty($NoCmmandsChatIdArr) && in_array($tgData['message_chat_id'].'_'.$tgData['message_thread_id'], $NoCmmandsChatIdArr)))
+    &&
+    !empty($aEnable)
+) {
 
     if(empty($BotSettings['enableGPU'])){
         \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $BotSettings['textGPU'], '', $tgData['message_id']);
@@ -69,6 +76,10 @@ if (stripos($tgData['messageTextLower'], '/sd') !== false && !empty($BotSettings
 
     if(!empty($promptData['prompt'])){
         $promptData['prompt'] = strip_tags($promptData['prompt']);
+        if(!\modules\botservices\services\sPrompt::instance()->isEnglishText($promptData['prompt'])){
+            \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], 'Use only English', '', $tgData['message_id']);
+            exit;
+        }
         $promptData['prompt'] = preg_replace("/[^A-Za-z0-9_ ->]/", '', $promptData['prompt']); //Supports English only
     }
 
@@ -77,6 +88,8 @@ if (stripos($tgData['messageTextLower'], '/sd') !== false && !empty($BotSettings
         \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $exampleText, '', $tgData['message_id']);
         exit;
     }
+
+
 
     /*echo '<pre>';
     print_r($promptData);
@@ -222,7 +235,8 @@ if (stripos($tgData['messageTextLower'], '/sd') !== false && !empty($BotSettings
         if(empty($InteractiveResData['outDataArr']['editMarkup'])){
             \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $tgData['message_id']);
         } else {
-            \modules\telegram\services\sTelegram::instance()->editMessageText($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
+            \modules\telegram\services\sTelegram::instance()->editMessageTextTemp($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $dataCallback['callback_query']['message']['reply_to_message']['message_id']);
+            //\modules\telegram\services\sTelegram::instance()->editMessageText($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
             //\modules\telegram\services\sTelegram::instance()->editMessageReplyMarkup($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], '', $InteractiveResData['outDataArr']['reply_markup']);
         }
         exit;

@@ -1,8 +1,15 @@
 <?php
 
-// AI Audio
-$tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeBotName($tgData['message_text'], 'audio');
-if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSettings['enableAiAudio'])) {
+// AI speech
+$aCmmand = 'read';
+$NoCmmandsChatIdArr = $BotSettings['SpeechNoCmmandsChatIdArr'];
+$aEnable = $BotSettings['enableAiSpeech'];
+$tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeBotName($tgData['message_text'], $aCmmand);
+if (
+    (stripos($tgData['messageTextLower'], '/'.$aCmmand) !== false || (!empty($NoCmmandsChatIdArr) && in_array($tgData['message_chat_id'].'_'.$tgData['message_thread_id'], $NoCmmandsChatIdArr)))
+    &&
+    !empty($aEnable)
+) {
 
     if(empty($BotSettings['enableGPU'])){
         \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $BotSettings['textGPU'], '', $tgData['message_id']);
@@ -12,17 +19,16 @@ if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSetti
     $tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeCommand($tgData['messageTextLower']);
 
     // Подключаем нейросеть StableDiffusion
-    $sAiAudio = new \modules\aiaudio\services\sAiAudio();
-    $sAiAudio->pathAiAudio = $BotSettings['pathAiAudio'];
+    $sAiSpeech = new \modules\aivg\services\sAiSpeech();
+    $sAiSpeech->pathAiSpeech = $BotSettings['pathAiSpeech'];
 
     $exampleText = '';
-    $exampleText .= '/audio Example Text. Hello, welcome to Image Club'.PHP_EOL;
+    $exampleText .= '/read Example Text. Hello, welcome to Image Club'.PHP_EOL;
     //$exampleText .= 'prompt: Hello, welcome to Image Club.'.PHP_EOL;
-    //$exampleText .= 'voice_preset: v2/en_speaker_0'.PHP_EOL;
 
-    $AllowedModelsArr=$BotSettings['audioAllowedModelsArr'];
+    $AllowedModelsArr=$BotSettings['speechAllowedModelsArr'];
 
-    $dir = $tgData['DIR'].'/uploads/audio';
+    $dir = $tgData['DIR'].'/uploads/speech';
     if(!file_exists($dir)){
         if (!mkdir($dir, 0777, true)) {
             die('Не удалось создать директории...');
@@ -37,21 +43,26 @@ if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSetti
     if(!empty($dataCallback['callback_query']['message']['reply_to_message']['text'])){
         $message_text_prompt = $dataCallback['callback_query']['message']['reply_to_message']['text'];
     }
+    // Если подпись, то будет как текст
+    if(!empty($dataCallback['callback_query']['message']['reply_to_message']['caption'])){
+        $message_text_prompt = $dataCallback['callback_query']['message']['reply_to_message']['caption'];
+    }
 
     // Текст с ключами в массив с данными
-    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text_prompt, 'prompt', ['voice_preset','prompt']);
+    $PromptDataByMessage = \modules\botservices\services\sPrompt::instance()->getPromptDataByMessage($message_text_prompt, 'prompt', ['language', 'speaker', 'prompt']);
     $promptData=$PromptDataByMessage['promptData'];
+
+    /*if(empty($promptData['prompt'])){
+        $promptData['prompt'] = strip_tags($tgData['messageTextLower']);
+        $promptData['prompt'] = str_replace(["\r", "\n"], ' ', $promptData['prompt']);
+        print_r($promptData);
+    }*/
 
     // Если пустой, отправляем пример
     if(empty($promptData['prompt'])){
-        \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $exampleText, '', $tgData['message_id']);
+        \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $exampleText.'4444444', '', $tgData['message_id']);
         exit;
     }
-
-    /*echo '<pre>';
-    print_r($promptData);
-    echo '</pre>';
-    exit;*/
 
     $InteractiveArrData['TypeSelect'] = 'simple';
 
@@ -91,40 +102,77 @@ if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSetti
             'select_key' => 'language',
             'select_data' => [
                 ['select_value' => 'en', 'select_name' => 'English'],
-                ['select_value' => 'de', 'select_name' => 'German'],
-                ['select_value' => 'es', 'select_name' => 'Spanish'],
-                ['select_value' => 'fr', 'select_name' => 'French'],
-                ['select_value' => 'hi', 'select_name' => 'Hindi'],
-                ['select_value' => 'it', 'select_name' => 'Italian'],
-                ['select_value' => 'ja', 'select_name' => 'Japanese'],
-                ['select_value' => 'ko', 'select_name' => 'Korean'],
-                ['select_value' => 'pl', 'select_name' => 'Polish'],
-                ['select_value' => 'pt', 'select_name' => 'Portuguese'],
+                //['select_value' => 'de', 'select_name' => 'German'],
+                //['select_value' => 'es', 'select_name' => 'Spanish'],
+                //['select_value' => 'fr', 'select_name' => 'French'],
+                //['select_value' => 'hi', 'select_name' => 'Hindi'],
+                //['select_value' => 'it', 'select_name' => 'Italian'],
+                //['select_value' => 'ja', 'select_name' => 'Japanese'],
+                //['select_value' => 'ko', 'select_name' => 'Korean'],
+                //['select_value' => 'pl', 'select_name' => 'Polish'],
+               // ['select_value' => 'pt', 'select_name' => 'Portuguese'],
                 ['select_value' => 'ru', 'select_name' => 'Russian'],
-                ['select_value' => 'tr', 'select_name' => 'Turkish'],
-                ['select_value' => 'zh', 'select_name' => 'Chinese, simplified'],
+                //['select_value' => 'tr', 'select_name' => 'Turkish'],
+                //['select_value' => 'zh', 'select_name' => 'Chinese, simplified'],
             ]
         ];
+    }
 
+    // get voice
+    $chat_id_input = 0;
+    $message_id_input = 0;
+    if(!empty($dataCallback['callback_query']['message']['message_id'])){
+        $chat_id_input = $dataCallback['callback_query']['message']['chat']['id'];
+        $message_id_input = $dataCallback['callback_query']['message']['reply_to_message']['message_id'];
+    } else {
+        $chat_id_input = $tgData['message_chat_id'];
+        $message_id_input = $tgData['message_id'];
+    }
+    $MessageRowInput = \modules\telegram\services\sTelegram::instance()->getMessage($chat_id_input,$message_id_input);
+    //print_r($MessageRowInput);
+    $audiosData=[];
+    if(empty($MessageRowInput['error'])){
+        $audiosData = \modules\telegram\services\sTelegram::instance()->getFilesByMessage($tgData['bot_token'], $MessageRowInput['dataMessage'], 'audio', ['message','reply_to_message'], $tgData['DIR'].'/../../backend/modules/aivg/services/temp/inputfiles/');
+
+        echo '<pre>';
+        //print_r($dataMessage);
+        //print_r($tgData);
+        print_r($audiosData);
+        echo '</pre>';
+    }
+
+    $InteractiveKeysStr = '';
+    if(!empty($dataCallback['callback_query']['data'])){
+        $InteractiveKeysStr = explode(' ', $dataCallback['callback_query']['data'])[0];
+    }
+    $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive('/read', $InteractiveArrData, $InteractiveKeysStr);
+
+    if(!empty($InteractiveResData['error'])){
+        print_r($InteractiveResData);
+        exit;
     }
 
     // Choice 3
-    if(empty($promptData['speaker'])){
+    if(empty($promptData['speaker']) && empty($audiosData['filesData'][0]['file'])){
+        if(!empty($InteractiveResData['outDataArr']['arrKeysValues']['language']) && $InteractiveResData['outDataArr']['arrKeysValues']['language']=='ru'){
+            /*$select_data = [];
+            for ($i = 0; $i <= 5; $i++) {
+                $select_data[] = ['select_value' => $i, 'select_name' => 'Speaker '.$i];
+            }*/
 
-        $select_data = [];
-        for ($i = 0; $i <= 9; $i++) {
-            $select_data[] = ['select_value' => 'speaker_'.$i, 'select_name' => 'Speaker '.$i];
+            $InteractiveArrData['ElementsSelect'][] = [
+                'columns' => 3,
+                'select_value' => 'Value_Element_0',
+                'select_name' => 'Оператор',
+                'select_text' => 'Выберите оператора:',
+                'select_key' => 'speaker',
+                'select_data' => [
+                    ['select_value' => 0, 'select_name' => 'Misha'],
+                    ['select_value' => 1, 'select_name' => 'Vova'],
+                    ['select_value' => 2, 'select_name' => 'Alice'],
+                ]
+            ];
         }
-
-        $InteractiveArrData['ElementsSelect'][] = [
-            'columns' => 3,
-            'select_value' => 'Value_Element_0',
-            'select_name' => 'Оператор',
-            'select_text' => 'Выберите оператора:',
-            'select_key' => 'speaker',
-            'select_data' => $select_data,
-        ];
-
     }
 
     //$InteractiveArrData = \modules\telegram\services\sInteractive::instance()->getExampleInteractiveArrData('simple');
@@ -132,7 +180,11 @@ if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSetti
     if(!empty($dataCallback['callback_query']['data'])){
         $InteractiveKeysStr = explode(' ', $dataCallback['callback_query']['data'])[0];
     }
-    $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive('/audio', $InteractiveArrData, $InteractiveKeysStr);
+    $InteractiveResData = \modules\telegram\services\sInteractive::instance()->getInteractive('/read', $InteractiveArrData, $InteractiveKeysStr);
+
+    /*echo '<pre>';
+    print_r($InteractiveResData);
+    echo '</pre>';*/
 
     if(!empty($InteractiveResData['error'])){
         print_r($InteractiveResData);
@@ -172,27 +224,26 @@ if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSetti
 
     // Если это требуемая модель, то применяем
     $model_id = $AllowedModelsArr[0];
-    if(!empty($promptData['model_id'])){
+    if(!empty($promptData['language'])){
         foreach ($AllowedModelsArr as $AllowedModelKey => $AllowedModelRow){
-            if(mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelKey) || mb_strtolower($promptData['model_id']) == mb_strtolower($AllowedModelRow)){
+            if(mb_strtolower($promptData['language']) == mb_strtolower($AllowedModelKey) || mb_strtolower($promptData['language']) == mb_strtolower($AllowedModelRow)){
                 $model_id = mb_strtolower($AllowedModelRow);
             }
         }
     }
 
     $prompt = (!empty($promptData['prompt']))?$promptData['prompt']:'';
-    $voice_preset = (!empty($promptData['voice_preset']))?$promptData['voice_preset']:'';
 
-    if(!empty($promptData['language']) && !empty($promptData['speaker'])){
-        $voice_preset = $promptData['language'].'_'.$promptData['speaker'];
+
+
+    $speechData=[];
+    $speechData['from_id'] = $tgData['from_id'];
+    $speechData['model_id']=$model_id;
+    $speechData['prompt']=$prompt;
+    $speechData['speaker']=(!empty($promptData['speaker']))?$promptData['speaker']:'';
+    if(!empty($audiosData['filesData'][0]['file'])){
+        $speechData['ref_audio']=$audiosData['filesData'][0]['file'];
     }
-
-
-    $audioData=[];
-    $audioData['from_id'] = $tgData['from_id'];
-    $audioData['model_id']=$model_id;
-    $audioData['prompt']=$prompt;
-    $audioData['voice_preset']=$voice_preset;
 
     $waitMessageData = \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $BotSettings['waitMessage'], '', $tgData['message_id']); // show waitMessage
 
@@ -205,22 +256,23 @@ if (stripos($tgData['messageTextLower'], '/audio') !== false && !empty($BotSetti
         exit;
     }
 
-    $AiAudioData = $sAiAudio->getTxt2Audio($audioData);
+    $AiSpeechData = $sAiSpeech->getTxt2Speech($speechData);
 
     \modules\telegram\services\sTelegram::instance()->removeMessage($tgData['bot_token'], $tgData['message_chat_id'],  $waitMessageData['MessageId']); // remove waitMessage
 
-    if(!empty($AiAudioData['error'])){
-        exit(json_encode($AiAudioData));
+    if(!empty($AiSpeechData['error'])){
+        exit(json_encode($AiSpeechData));
     }
 
-    if(!empty($AiAudioData['resultData']['files'][0]['FilePath'])){
+    if(!empty($AiSpeechData['resultData']['files'][0]['FilePath'])){
+        echo $AiSpeechData['resultData']['files'][0]['FilePath'];
 
         $resultText = '';
-        $resultText .= '/audio'.PHP_EOL;
-        $resultText .= 'prompt: '.$AiAudioData['resultData']['prompt'].PHP_EOL;
-        $resultText .= 'voice_preset: '.$AiAudioData['resultData']['voice_preset'].PHP_EOL;
+        //$resultText .= '/read'.PHP_EOL;
+        //$resultText .= 'prompt: '.$AiSpeechData['resultData']['prompt'].PHP_EOL;
+        //$resultText .= 'language: '.$AiSpeechData['resultData']['model_id'].PHP_EOL;
 
-        $sendPhotoId = \modules\telegram\services\sTelegram::instance()->sendAudio($tgData['bot_token'], $tgData['message_chat_id'], $AiAudioData['resultData']['files'][0]['FilePath'], $resultText, $tgData['message_id']);
+        $sendPhotoId = \modules\telegram\services\sTelegram::instance()->sendAudio($tgData['bot_token'], $tgData['message_chat_id'], $AiSpeechData['resultData']['files'][0]['FilePath'], $resultText, $tgData['message_id']);
 
         exit;
     }

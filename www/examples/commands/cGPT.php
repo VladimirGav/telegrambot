@@ -1,8 +1,16 @@
 <?php
 // AI Gpt
-$tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeBotName($tgData['message_text'], 'gpt');
+$aCmmand = 'gpt';
+$NoCmmandsChatIdArr = $BotSettings['gptNoCmmandsChatIdArr'];
+$aEnable = $BotSettings['enableGPT'];
+
+$tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeBotName($tgData['message_text'], $aCmmand);
 $pos3 = stripos($tgData['reply_to_message_text'], '#gpt_'); // Проверка в #gpt_ при разговоре
-if ((stripos($tgData['messageTextLower'], '/gpt') !== false || $pos3 !== false ) && !empty($BotSettings['enableGPT'])) {
+if (
+    ( (stripos($tgData['messageTextLower'], '/'.$aCmmand) !== false || $pos3 !== false ) || (!empty($NoCmmandsChatIdArr) && in_array($tgData['message_chat_id'].'_'.$tgData['message_thread_id'], $NoCmmandsChatIdArr)))
+    &&
+    !empty($aEnable)
+) {
     $tgData['messageTextLower'] = \modules\botservices\services\sPrompt::instance()->removeCommand($tgData['messageTextLower']);
 
     $exampleText = '';
@@ -83,7 +91,8 @@ if ((stripos($tgData['messageTextLower'], '/gpt') !== false || $pos3 !== false )
             if(empty($InteractiveResData['outDataArr']['editMarkup'])){
                 \modules\telegram\services\sTelegram::instance()->sendMessage($tgData['bot_token'], $tgData['message_chat_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $tgData['message_id']);
             } else {
-                \modules\telegram\services\sTelegram::instance()->editMessageText($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
+                \modules\telegram\services\sTelegram::instance()->editMessageTextTemp($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup'], $dataCallback['callback_query']['message']['reply_to_message']['message_id']);
+                //\modules\telegram\services\sTelegram::instance()->editMessageText($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], $InteractiveResData['outDataArr']['select_text'], $InteractiveResData['outDataArr']['reply_markup']);
                 //\modules\telegram\services\sTelegram::instance()->editMessageReplyMarkup($tgData['bot_token'], $dataCallback['callback_query']['message']['chat']['id'], $dataCallback['callback_query']['message']['message_id'], '', $InteractiveResData['outDataArr']['reply_markup']);
             }
             exit;

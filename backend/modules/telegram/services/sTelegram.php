@@ -119,7 +119,36 @@ class sTelegram
         return ['error' => $error, 'data' => $dataText, 'MessageId'=>$getMessageId];
     }
 
+    public function editMessageTextTemp($bot_token, $chat_id='', $message_id='', $text='', $reply_markup='', $reply_to_message_id=''){
+        $this->sendMessage($bot_token, $chat_id, $text, $reply_markup, $reply_to_message_id);
+        $this->removeMessage($bot_token, $chat_id,  $message_id); // remove
+    }
+
+   public function getMessage($chat_id, $message_id){
+       $dataMessage = [];
+       $dataText = 'Success';
+       $error = 0;
+        try {
+            $dirDataMessages = __DIR__.'/temp/data/messages/'.$chat_id;
+            $file = $dirDataMessages.'/'.$message_id.'.json';
+            $Message=[];
+            if(file_exists($file)){
+                $Message = json_decode(file_get_contents($file), true);
+            }
+            if(!empty($Message['dataMessage'])){
+                $dataMessage = $Message['dataMessage'];
+            } else {
+                $error = 1;
+            }
+        } catch (\Exception $e) {
+            $dataText = 'Exception: '.  $e->getMessage();
+            $error = 1;
+        }
+        return ['error' => $error, 'data' => $dataText, 'dataMessage'=>$dataMessage];
+    }
+
     public function editMessageText($bot_token, $chat_id='', $message_id='', $text='', $reply_markup=''){
+        echo 'editMessageText Dont Work';
         $telegram = new \Telegram\Bot\Api($bot_token);
         $dataMessage=[];
         if(!empty($chat_id)){
@@ -293,6 +322,13 @@ class sTelegram
         ];
 
         file_put_contents($dirData.'/'.$from_id.'.json', json_encode($UserLastMessageData, JSON_PRETTY_PRINT));
+
+        // save message
+        if(!empty($dataMessage['message']['message_id']) && !empty($dataMessage['message']['chat']['id']) ){
+            $dirDataMessages = __DIR__.'/temp/data/messages/'.$dataMessage['message']['chat']['id'];
+            if (!file_exists($dirDataMessages)) { mkdir($dirDataMessages, 0777, true); }
+            file_put_contents($dirDataMessages.'/'.$dataMessage['message']['message_id'].'.json', json_encode($UserLastMessageData, JSON_PRETTY_PRINT));
+        }
         return ['error' => 0, 'data' => 'Success'];
     }
 
@@ -560,13 +596,15 @@ class sTelegram
         $FileData = $this->getFile($bot_token, $file_id);
         $FileData = $FileData->toArray();
         $fileInfo = pathinfo($FileData['file_path']);
-        $filePath = $folderSave.'/'.time().rand(10000, 99999).'.'.$fileInfo['extension'];
+        $filePath = $folderSave.'/'.$FileData['file_unique_id'].'.'.$fileInfo['extension'];
         $filePath = str_replace("//", "/", $filePath);
-        $content = file_get_contents('https://api.telegram.org/file/bot'.$bot_token.'/'.$FileData['file_path']);
-        if (!file_exists($folderSave)) {
-            mkdir($folderSave, 0777, true);
+        if(!file_exists($filePath)){
+            $content = file_get_contents('https://api.telegram.org/file/bot'.$bot_token.'/'.$FileData['file_path']);
+            if (!file_exists($folderSave)) {
+                mkdir($folderSave, 0777, true);
+            }
+            file_put_contents($filePath, $content);
         }
-        file_put_contents($filePath, $content);
         return ['error' => 0, 'data' => 'Success', 'file'=>$filePath];
     }
 
@@ -587,6 +625,94 @@ class sTelegram
             }
         }
         return ['error'=> 0, 'data' => 'Success'];
+    }
+
+    public function getFilesByMessage($bot_token, $dataMessage, $mime_type, $messageTypes, $saveFileDir)
+    {
+        $getID3 = new \getID3();
+        $max_file_size = 1000000;
+        $filesData=[];
+        $countFiles = 0;
+        foreach ($messageTypes as $messageType){
+            $messageRow = [];
+            if($messageType=='message' && !empty($dataMessage['message'])){
+                $messageRow = $dataMessage['message'];
+            }
+            if($messageType=='reply_to_message' && !empty($dataMessage['message']['reply_to_message'])){
+                $messageRow = $dataMessage['message']['reply_to_message'];
+            }
+            echo '<pre>';
+            echo $mime_type;
+            print_r($messageRow);
+            echo '<pre>';
+            if($mime_type=='audio'){
+                foreach (['voice','document','audio'] as $typeDoc){
+                    if(!empty($messageRow[$typeDoc]['mime_type']) && strpos($messageRow[$typeDoc]['mime_type'], $mime_type) !== false){
+                        if($messageRow[$typeDoc]['file_size']>$max_file_size){
+                            return ['error' => 2, 'data' => 'Maximum file size 1MB'];
+                        }
+                        $filesData[$countFiles] = $messageRow[$typeDoc];
+                        if($saveFileDir!=''){
+                            $saveFileData = $this->saveFile($bot_token, $messageRow[$typeDoc]['file_id'], $saveFileDir);
+                            if(empty($saveFileData['error'])){
+                                $info = $getID3->analyze($saveFileData['file']);
+                                echo '<pre>';
+                                print_r($info);
+                                echo '<pre>';
+                                if (isset($info['playtime_seconds'])) {
+                                    if($info['playtime_seconds']>10){
+                                        return ['error' => 2, 'data' => 'Maximum duration 10 seconds'];
+                                    }
+                                } else {
+                                    return ['error' => 2, 'data' => 'Error. Maximum duration 10 seconds'];
+                                }
+                                $filesData[$countFiles]['file'] = $saveFileData['file'];
+                            }
+                        }
+                        $countFiles++;
+                    }
+                }
+            }
+            if($mime_type=='image'){
+                $typeDoc = 'document';
+                    if(!empty($messageRow[$typeDoc]['mime_type']) && strpos($messageRow[$typeDoc]['mime_type'], $mime_type) !== false){
+                        if($messageRow[$typeDoc]['file_size']>$max_file_size){
+                            return ['error' => 2, 'data' => 'Maximum file size 1MB'];
+                        }
+                        $filesData[$countFiles] = $messageRow[$typeDoc];
+                        if($saveFileDir!=''){
+                            $saveFileData = $this->saveFile($bot_token, $messageRow[$typeDoc]['file_id'], $saveFileDir);
+                            if(empty($saveFileData['error'])){
+                                $filesData[$countFiles]['file'] = $saveFileData['file'];
+                            }
+                        }
+                        $countFiles++;
+                    }
+
+                    if(!empty($messageRow['photo'])){
+                        $lastKey = count($messageRow['photo']) - 1;
+                        if(!empty($messageRow['photo'][$lastKey]['file_id'])){
+                            if($messageRow['photo'][$lastKey]['file_size']>$max_file_size){
+                                return ['error' => 2, 'data' => 'Maximum file size 1MB'];
+                            }
+
+                            $filesData[$countFiles] = $messageRow['photo'][$lastKey];
+                            if($saveFileDir!=''){
+                                $saveFileData = $this->saveFile($bot_token, $messageRow['photo'][$lastKey]['file_id'], $saveFileDir);
+                                if(empty($saveFileData['error'])){
+                                    $filesData[$countFiles]['file'] = $saveFileData['file'];
+                                }
+                            }
+                            $countFiles++;
+                        }
+                    }
+
+            }
+            if(!empty($messageRow['message_id'])){
+
+            }
+        }
+        return ['error' => 0, 'data' => 'Success', 'filesData'=>$filesData];
     }
 
 
